@@ -41,9 +41,7 @@ export function PlayScreen() {
         <div className="sun" aria-hidden="true" />
         <div className="hills hills--back" aria-hidden="true" />
         <div className="hills hills--front" aria-hidden="true" />
-        <div className="route-lines" aria-hidden="true"><i /><i /><i /></div>
         <div className="region-landmark" aria-hidden="true"><i /><b /><span /></div>
-        <div className="kuno" aria-hidden="true"><span>↗</span></div>
         <div className="atmosphere-info">
           <p>{view.area.regionName}</p>
           <strong>{sanctuaryOpen ? 'Sicherer Ort' : 'Erkundungsgebiet'}</strong>

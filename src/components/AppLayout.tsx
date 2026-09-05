@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAppState } from '../app/AppState'
 import { phase2World } from '../content/world'
@@ -8,14 +9,34 @@ function navClass({ isActive }: { isActive: boolean }) {
 
 export function AppLayout() {
   const { adventureStatus, game, saveStatus } = useAppState()
+  const chromeRef = useRef<HTMLDivElement>(null)
   const hasAdventure = adventureStatus === 'ready' && game
   const weaponName = game?.player.equippedWeaponId
     ? phase2World.items.find((item) => item.id === game.player.equippedWeaponId)?.name ?? 'Unbekannt'
     : 'Keine Waffe'
 
+  // The pinned header grows with the text size setting; its height is published as a
+  // variable for anything that sticks below it, such as the map zoom bar.
+  useLayoutEffect(() => {
+    const chrome = chromeRef.current
+    if (!chrome) return
+    const measure = () => {
+      const height = chrome.getBoundingClientRect().height
+      if (height) document.documentElement.style.setProperty('--chrome-height', `${Math.round(height)}px`)
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', measure)
+      return () => window.removeEventListener('resize', measure)
+    }
+    const observer = new ResizeObserver(measure)
+    observer.observe(chrome)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <>
-      <div className="app-chrome">
+      <div className="app-chrome" ref={chromeRef}>
         <header className="app-header">
           <NavLink to="/" className="brand" aria-label="TextDungeon – Startseite">
             <span className="brand-mark" aria-hidden="true">✦</span>

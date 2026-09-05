@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAppState } from '../app/AppState'
 import { phase2World } from '../content/world'
 import { evaluateRequirement } from '../engine/requirements'
@@ -7,10 +7,12 @@ import { getConnectedKnownAreas, getKnownAreaIds } from '../engine/selectors'
 const MIN_ZOOM = 1
 const MAX_ZOOM = 4
 const ZOOM_STEP = 0.5
+const DEFAULT_ZOOM = 3
+const MAP_VIEW_BOX = { x: 20, y: 45, width: 960, height: 730 }
 
 export function MapScreen() {
   const { game } = useAppState()
-  const [zoom, setZoom] = useState(MIN_ZOOM)
+  const [zoom, setZoom] = useState(DEFAULT_ZOOM)
   const viewportRef = useRef<HTMLDivElement>(null)
 
   // Zoom around the middle of what is on screen, so the view does not jump.
@@ -31,6 +33,16 @@ export function MapScreen() {
     })
   }
 
+  // The starting zoom only shows a section, so open the map centred on the current area.
+  useEffect(() => {
+    const viewport = viewportRef.current
+    const area = phase2World.areas.find((entry) => entry.id === game?.currentAreaId)
+    if (!viewport || !area || !viewport.scrollWidth) return
+    const scale = viewport.scrollWidth / MAP_VIEW_BOX.width
+    viewport.scrollLeft = (area.mapPosition.x - MAP_VIEW_BOX.x) * scale - viewport.clientWidth / 2
+    viewport.scrollTop = (area.mapPosition.y - MAP_VIEW_BOX.y) * scale - viewport.clientHeight / 2
+  }, [])
+
   if (!game) return null
 
   const knownIds = new Set(getKnownAreaIds(game, phase2World))
@@ -45,7 +57,7 @@ export function MapScreen() {
         <p>Besuchte Orte sind kräftig markiert. Helle Orte kennst du bereits von einem angrenzenden Weg.</p>
       </header>
 
-      <p>Zoome hinein, wenn Namen zu nah beieinander stehen; die Schrift bleibt dabei gleich gross. Die Karte lässt sich in alle Richtungen verschieben. Alle Wege und Sperren stehen auch in der Textliste darunter.</p>
+      <p>Die Karte startet nah bei deinem aktuellen Ort. Mit «Ganze Karte» siehst du ganz Talora; die Schrift bleibt beim Zoomen gleich gross. Die Karte lässt sich in alle Richtungen verschieben. Alle Wege und Sperren stehen auch in der Textliste darunter.</p>
       {game.flags.includes('kartennotiz_sichtbar') && <p>Alvas Notiz: «Eine gute Karte zeigt nicht nur, wohin du gehst. Sie zeigt auch, wer auf deine Rückkehr wartet.»</p>}
       <section className="world-map" aria-labelledby="visual-map-title">
         <h2 id="visual-map-title" className="visually-hidden">Grafische Karte</h2>

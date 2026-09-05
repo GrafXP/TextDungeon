@@ -138,27 +138,18 @@ p { line-height: 1.62; }
 .confirm-card--danger { border-color: #d99a91; background: #fff4f1; }
 
 .screen { width: min(100% - 2rem, 1180px); margin: 0 auto; padding: clamp(1rem, 4vw, 2.5rem) 0 4rem; }
-.play-screen { display: grid; grid-template-columns: minmax(270px, .8fr) minmax(430px, 1.25fr); align-items: stretch; }
+/* Only a slim mood strip: sun, horizon and region landmark stay, the text gets the rest. */
+.play-screen { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: stretch; }
 .atmosphere-panel { position: relative; min-height: 620px; overflow: hidden; border-radius: 24px 0 0 24px; background: linear-gradient(#82c8bd 0%, #cce2c5 49%, #8aac76 50%, #31594b 100%); box-shadow: var(--shadow); }
 .atmosphere-panel--spiegelkueste { background: linear-gradient(#76c6c5 0%, #c7ece4 43%, #ddce9f 44%, #568c83 67%, #245a64 100%); }
 .atmosphere-panel--wisperwald { background: linear-gradient(#80b6a1 0%, #c8dcae 38%, #5f8a5b 39%, #173f34 100%); }
 .atmosphere-panel--donnerhoehe { background: linear-gradient(#617c91 0%, #b9c9cf 42%, #917e65 43%, #3d433e 100%); }
 .atmosphere-panel--verbindungswege { background: linear-gradient(#8a765d 0%, #c4aa7d 38%, #665841 39%, #243c38 100%); }
 .atmosphere-panel--jenseits_des_tors { background: radial-gradient(circle at 70% 18%, #d1b35d 0 3px, transparent 4px), radial-gradient(circle at 26% 31%, #e7ddaa 0 2px, transparent 3px), linear-gradient(#111827, #302a49 58%, #171d28); }
-.sun { position: absolute; top: 65px; right: 16%; width: 84px; height: 84px; border-radius: 50%; background: #f9d877; box-shadow: 0 0 45px rgba(249,216,119,.62); }
-.hills { position: absolute; right: -10%; bottom: 32%; left: -10%; height: 34%; border-radius: 50% 55% 0 0; background: #6e9e75; transform: rotate(-4deg); }
-.hills--front { bottom: 15%; left: -30%; height: 38%; background: #31594b; transform: rotate(8deg); }
-.kuno { position: absolute; right: 12%; bottom: 14%; display: grid; width: 110px; height: 110px; place-items: center; border: 8px solid #b67d26; border-radius: 50%; background: #f3cc69; box-shadow: 0 10px 25px rgba(0,0,0,.25); }
-.kuno::before, .kuno::after { position: absolute; bottom: -28px; width: 5px; height: 35px; content: ''; background: #9b6923; transform: rotate(18deg); }
-.kuno::before { left: 26px; transform: rotate(-18deg); }
-.kuno::after { right: 26px; }
-.kuno span { font-size: 2.8rem; transform: rotate(-15deg); }
-.route-lines { position: absolute; inset: 0; opacity: .35; }
-.route-lines i { position: absolute; width: 180px; height: 360px; border: 3px dashed #f7df91; border-radius: 50%; transform: rotate(34deg); }
-.route-lines i:nth-child(1) { left: -90px; bottom: -180px; }
-.route-lines i:nth-child(2) { right: -120px; bottom: -110px; transform: rotate(-20deg); }
-.route-lines i:nth-child(3) { top: -260px; right: 20px; }
-.region-landmark { position: absolute; right: 12%; bottom: 24%; width: 120px; height: 180px; opacity: .72; }
+.sun { position: absolute; top: 26px; left: 50%; width: 26px; height: 26px; border-radius: 50%; background: #f9d877; box-shadow: 0 0 24px rgba(249,216,119,.7); transform: translateX(-50%); }
+.hills { position: absolute; right: -70%; bottom: 33%; left: -70%; height: 13%; border-radius: 50% 55% 0 0; background: #6e9e75; transform: rotate(-4deg); }
+.hills--front { bottom: 16%; left: -110%; height: 15%; background: #31594b; transform: rotate(8deg); }
+.region-landmark { position: absolute; bottom: 42%; left: 50%; width: 120px; height: 180px; opacity: .72; transform: translateX(-50%) scale(.32); transform-origin: bottom center; }
 .region-landmark i, .region-landmark b, .region-landmark span { position: absolute; display: block; }
 .atmosphere-panel--sonnenmark .region-landmark i { inset: 60px 25px 0; border-radius: 60px 60px 8px 8px; background: #ead9aa; box-shadow: inset 0 0 0 8px rgba(72,83,65,.25); }
 .atmosphere-panel--sonnenmark .region-landmark b { top: 15px; left: 52px; width: 16px; height: 70px; background: #806f4b; }
@@ -172,7 +163,8 @@ p { line-height: 1.62; }
 .atmosphere-panel--donnerhoehe .region-landmark i { inset: 45px 15px 0; clip-path: polygon(50% 0,100% 100%,0 100%); background: #5c554b; }
 .atmosphere-panel--donnerhoehe .region-landmark b { top: 0; left: 52px; width: 12px; height: 92px; transform: rotate(18deg); background: #e9cb5f; clip-path: polygon(35% 0,100% 0,60% 45%,95% 45%,0 100%,34% 52%,0 52%); }
 .atmosphere-panel--jenseits_des_tors .region-landmark i { inset: 0 28px; border: 8px solid #d1b35d; border-bottom: 0; border-radius: 55px 55px 0 0; box-shadow: 0 0 28px rgba(225,194,99,.3); }
-.atmosphere-info { position: absolute; right: 1rem; bottom: .8rem; left: 1rem; color: white; }
+/* In the strip the caption runs bottom to top; the box needs a definite height, or the rotated text spills out. */
+.atmosphere-info { position: absolute; top: 4rem; right: 0; bottom: 1rem; left: 0; display: flex; align-items: center; justify-content: flex-start; gap: .6rem; color: white; text-shadow: 0 1px 4px rgba(8,32,26,.55); writing-mode: vertical-rl; transform: rotate(180deg); }
 .atmosphere-info p { margin: 0; font-size: .7rem; font-weight: 700; letter-spacing: .12em; line-height: 1.2; text-transform: uppercase; }
 .atmosphere-info strong { font-size: .85rem; }
 .reading-card { position: relative; z-index: 1; min-height: 620px; padding: clamp(1.5rem, 5vw, 3.2rem); border: 1px solid #e3d4b5; border-radius: 0 24px 24px 0; background: var(--paper); box-shadow: var(--shadow); }
@@ -308,7 +300,8 @@ blockquote { position: relative; margin: 1.2rem 0; padding: .9rem 1.1rem; border
 .visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; overflow: hidden !important; clip: rect(0 0 0 0) !important; clip-path: inset(50%) !important; white-space: nowrap !important; }
 .map-screen { width: min(100% - 2rem, 1040px); }
 .world-map { border: 1px solid #d4c7a9; border-radius: var(--radius); background: linear-gradient(145deg, #edf2df, #d8e7d8); box-shadow: var(--shadow); }
-.map-zoom { display: flex; align-items: center; gap: .5rem; padding: .6rem .8rem; border-bottom: 1px solid var(--line); }
+/* Stays right below the pinned header while scrolling, so the zoom is always reachable. */
+.map-zoom { position: sticky; z-index: 5; top: var(--chrome-height, 7.1rem); display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding: .6rem .8rem; border-bottom: 1px solid var(--line); border-radius: var(--radius) var(--radius) 0 0; background: #edf2df; }
 .map-zoom button { display: grid; min-width: 48px; min-height: 48px; place-items: center; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--forest); cursor: pointer; font-weight: 700; font-size: 1.2rem; }
 .map-zoom button:disabled { opacity: .4; cursor: default; }
 .map-zoom-reset { min-width: auto !important; padding: 0 .9rem; font-size: .88rem !important; }
@@ -430,11 +423,10 @@ blockquote { position: relative; margin: 1.2rem 0; padding: .9rem 1.1rem; border
 
 @media (max-width: 760px) {
   .play-screen { display: block; }
-  .atmosphere-panel { min-height: 190px; border-radius: 18px 18px 0 0; }
-  .sun { top: 25px; width: 58px; height: 58px; }
-  .kuno { bottom: 17%; width: 66px; height: 66px; border-width: 5px; }
-  .kuno span { font-size: 1.6rem; }
-  .kuno::before, .kuno::after { bottom: -18px; height: 22px; }
+  .atmosphere-panel { min-height: 54px; border-radius: 18px 18px 0 0; }
+  .sun { top: 50%; left: 18px; width: 20px; height: 20px; transform: translateY(-50%); }
+  .hills, .region-landmark { display: none; }
+  .atmosphere-info { top: 0; right: 1rem; bottom: 0; left: 3rem; gap: .5rem; writing-mode: horizontal-tb; transform: none; }
   .reading-card { min-height: auto; border-radius: 0 0 18px 18px; }
   .quick-status .save-state { display: none; }
   .journal-controls { flex-direction: column; align-items: stretch; }
