@@ -71,6 +71,7 @@ export function AppLayout() {
           {hasAdventure && <NavLink to="/spiel" className={navClass}>Abenteuer</NavLink>}
           {hasAdventure && <NavLink to="/karte" className={navClass}>Karte</NavLink>}
           {hasAdventure && <NavLink to="/aufgaben" className={navClass}>Aufgaben</NavLink>}
+          {hasAdventure && <NavLink to="/merkliste" className={navClass}>Merkliste</NavLink>}
           {hasAdventure && <NavLink to="/tagebuch" className={navClass}>Tagebuch</NavLink>}
           <NavLink to="/einstellungen" className={navClass}>Einstellungen</NavLink>
         </nav>

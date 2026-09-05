@@ -23,7 +23,7 @@ npm run preview
 
 Die technische und inhaltliche Umsetzung von Phase 1 bis Phase 5 des [`PRODUCT_PLAN.md`](./PRODUCT_PLAN.md) ist abgeschlossen. Die geplante Erprobung mit Kindern bleibt der nächste manuelle Validierungsschritt:
 
-- responsive App-Hülle und Routing für Start, Spiel, Karte, Aufgaben und Einstellungen;
+- responsive App-Hülle und Routing für Start, Spiel, Karte, Aufgaben, Merkliste, Tagebuch und Einstellungen;
 - PWA-Manifest, Service Worker, Offline- und Updatezustände sowie Installationshinweis;
 - getrennte, versionierte IndexedDB-Speicherung für Abenteuer und Einstellungen;
 - geordnete automatische Schreibvorgänge, Laufzeitvalidierung und Migration;
@@ -34,6 +34,8 @@ Die technische und inhaltliche Umsetzung von Phase 1 bis Phase 5 des [`PRODUCT_P
 - alle 41 Orte und 55 Verbindungen der Erzählbibel, davon 35 ohne Questfortschritt erreichbar;
 - sechs regionale Rundwege und Abkürzungen mit sichtbaren, datengetriebenen Sperrgründen;
 - Aufgabenansicht mit drei gespeicherten Hinweisstufen, gezielten Kartenhinweisen und entdeckungsbasierter SVG-Karte;
+- Kartenstatus für unbesuchte, offene, blockierte und erledigte Orte sowie sichtbare Wegsperren und Merklistenziele;
+- dynamische Merkliste für Zutaten, Werkzeuge, Fundorte, Verwendungszwecke und verbrauchte Questgegenstände;
 - Weltvalidator für IDs, Ziele, Anforderungen, Sackgassen und Lösbarkeit;
 - responsives Inventar mit Gegenstandsdetails, Fokusführung und erlaubten Aktionen;
 - sechs Waffen mit unterschiedlichen Schadenswerten, Panzerungs- und Regionsboni;

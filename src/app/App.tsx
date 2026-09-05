@@ -7,6 +7,7 @@ import { MapScreen } from '../screens/MapScreen'
 import { PlayScreen } from '../screens/PlayScreen'
 import { JournalScreen } from '../screens/JournalScreen'
 import { QuestsScreen } from '../screens/QuestsScreen'
+import { RemindersScreen } from '../screens/RemindersScreen'
 import { SettingsScreen } from '../screens/SettingsScreen'
 import { TitleScreen } from '../screens/TitleScreen'
 import { useAppState } from './AppState'
@@ -39,6 +40,7 @@ export function App() {
           <Route path="/spiel" element={<AdventureRoute><PlayScreen /></AdventureRoute>} />
           <Route path="/karte" element={<AdventureRoute><MapScreen /></AdventureRoute>} />
           <Route path="/aufgaben" element={<AdventureRoute><QuestsScreen /></AdventureRoute>} />
+          <Route path="/merkliste" element={<AdventureRoute><RemindersScreen /></AdventureRoute>} />
           <Route path="/tagebuch" element={<AdventureRoute><JournalScreen /></AdventureRoute>} />
           <Route path="/einstellungen" element={<SettingsScreen />} />
         </Route>

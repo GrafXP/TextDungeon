@@ -74,6 +74,28 @@ test('enthält keine Vorlesefunktion mehr', async ({ page }) => {
   await expect(page.getByText(/vorlesen/i)).toHaveCount(0)
 })
 
+test('führt eine Merkliste und hebt bekannte Ziele mit offenen Dingen auf der Karte hervor', async ({ page }) => {
+  await page.goto('/')
+  await page.getByLabel('Wie heisst du?').fill('Mira')
+  await clickAction(page, 'Abenteuer starten')
+  await clickAction(page, /Gehe zum Drei-Wege-Platz/)
+  await page.getByRole('link', { name: 'Merkliste', exact: true }).click()
+
+  await expect(page.getByRole('heading', { name: 'Merkliste' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Kunos erste Richtung' })).toBeVisible()
+  await page.getByRole('link', { name: /Auf Karte zeigen: Tempel der Morgenklinge/ }).click()
+  await expect(page.getByText('Merklistenziel: Tempel der Morgenklinge ist auf der Karte hervorgehoben.')).toBeVisible()
+  await expect(page.locator('.map-node--target')).toHaveCount(1)
+  expect(await page.locator('.map-status-marker--new').count()).toBeGreaterThan(0)
+
+  await page.getByRole('link', { name: 'Abenteuer', exact: true }).click()
+  await clickAction(page, /Betritt den Tempel der Morgenklinge/)
+  await page.getByRole('link', { name: 'Merkliste', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Für die Quellträne' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Mondmoos' })).toBeVisible()
+  await expect(page.getByText(/Das Pflanzenbuch in der Alten Baumschule/)).toBeVisible()
+})
+
 test('hält bei 320 Pixeln und sehr grosser Schrift Ort und Bedienelemente erreichbar', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 })
   await page.goto('/einstellungen')
