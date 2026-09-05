@@ -1,5 +1,7 @@
 import type {
   AreaDefinition,
+  EncounterDefinition,
+  EnemyDefinition,
   InteractionDefinition,
   ItemDefinition,
   PassageDefinition,
@@ -113,9 +115,31 @@ export const phase2Areas: AreaDefinition[] = [
     regionName: 'Spiegelküste',
     safe: false,
     mapPosition: { x: 650, y: 450 },
-    firstDescription: 'Breite Stufen führen in einen Tempel, über dessen Boden dünne Wasserlinien laufen. Weit hinten bewegt sich ein riesiger Schatten. Kuno rät dir, diesen Ort für später zu merken.',
-    revisitDescription: 'Die Wasserlinien im Gezeitentempel zeigen tiefer ins Gebäude. Für den Schatten dort bist du noch nicht vorbereitet.',
+    firstDescription: 'Breite Stufen führen in einen Tempel, über dessen Boden dünne Wasserlinien laufen. Hinter dem letzten Tor bewegt sich ein riesiger Schatten. Schwarzes Glas schliesst sich sofort über jedem Kratzer. Kuno warnt dich, dass nur das Licht der Morgenklinge diesen Panzer öffnen kann.',
+    revisitDescription: 'Die Wasserlinien im Gezeitentempel zeigen zum Perlenbecken. Hinter dem Tor wartet Marea unter ihrem schwarzen Panzer.',
     inspectText: 'Ein Wandbild zeigt eine gewaltige Schildkröte, die einen Hafen vor einer Flut schützt. Graue Risse ziehen sich über ihren Panzer.'
+  },
+  {
+    id: 'morgen_tempel',
+    name: 'Tempel der Morgenklinge',
+    regionId: 'sonnenmark',
+    regionName: 'Sonnenmark',
+    safe: true,
+    mapPosition: { x: 480, y: 70 },
+    firstDescription: 'Zwischen den Ästen eines steinernen Baums steckt eine graue Klinge. Drei Bilder umgeben den Stamm: Sonnenlicht, ein klarer Tropfen und eine silberne Windlinie. Deine bisherigen Funde lassen die Bilder schwach leuchten.',
+    revisitDescription: 'Der steinerne Baum wartet im stillen Tempel. Die drei Gabenplätze zeigen, was du bereits erweckt hast.',
+    inspectText: 'Unter den Bildern steht: «Bringe zurück, was Licht, Wasser und Wind vergessen haben.» Kunos Nadel zeigt direkt auf die Klinge.'
+  },
+  {
+    id: 'perlenbecken',
+    name: 'Perlenbecken',
+    regionId: 'spiegelkueste',
+    regionName: 'Spiegelküste',
+    safe: false,
+    mapPosition: { x: 650, y: 540 },
+    firstDescription: 'Leere Boote drehen sich im Kreis um eine gewaltige Schildkröte. Schwarzes Glas liegt zwischen den Platten ihres Panzers. Das ist Marea, die Wächterin der Gezeiten – und der Schatten hält sie fest.',
+    revisitDescription: 'Marea wartet im tiefen Perlenbecken. Zwischen ihren Panzerplatten glänzt der Grauschleier wie schwarzes Glas.',
+    inspectText: 'Vor einer Wellenrolle steigt das Wasser sichtbar an. Mehrere angebrochene Steinsäulen könnten Marea aus dem Gleichgewicht bringen.'
   }
 ]
 
@@ -126,12 +150,18 @@ export const phase2Passages: PassageDefinition[] = [
   { id: 'p04', fromAreaId: 'alter_markt', toAreaId: 'garten_der_namen', labelFrom: 'Gehe zum Garten der Namen', labelTo: 'Gehe zum Alten Markt' },
   { id: 'p05', fromAreaId: 'garten_der_namen', toAreaId: 'bogenbruecke', labelFrom: 'Gehe zur Bogenbrücke', labelTo: 'Gehe zum Garten der Namen' },
   { id: 'p06', fromAreaId: 'bogenbruecke', toAreaId: 'drei_wege_platz', labelFrom: 'Nimm den kurzen Weg zum Platz', labelTo: 'Gehe über die Bogenbrücke', shortcut: true },
+  { id: 'p07', fromAreaId: 'drei_wege_platz', toAreaId: 'morgen_tempel', labelFrom: 'Betritt den Tempel der Morgenklinge', labelTo: 'Kehre zum Drei-Wege-Platz zurück' },
   { id: 'p10', fromAreaId: 'drei_wege_platz', toAreaId: 'kuestenpfad', labelFrom: 'Folge dem Weg zur Küste', labelTo: 'Steige zum Drei-Wege-Platz hinauf' },
   { id: 'p24', fromAreaId: 'kuestenpfad', toAreaId: 'muschelhafen', labelFrom: 'Gehe zum Muschelhafen', labelTo: 'Steige den Küstenpfad hinauf' },
   { id: 'p25', fromAreaId: 'muschelhafen', toAreaId: 'ueberfluteter_markt', labelFrom: 'Gehe zum überfluteten Markt', labelTo: 'Kehre zum Muschelhafen zurück' },
   { id: 'p26', fromAreaId: 'muschelhafen', toAreaId: 'versunkene_bibliothek', labelFrom: 'Gehe zur Versunkenen Bibliothek', labelTo: 'Kehre zum Muschelhafen zurück' },
   { id: 'p28', fromAreaId: 'ueberfluteter_markt', toAreaId: 'versunkene_bibliothek', labelFrom: 'Nimm den Steg zur Bibliothek', labelTo: 'Nimm den Steg zum Markt', shortcut: true },
-  { id: 'p32', fromAreaId: 'versunkene_bibliothek', toAreaId: 'gezeitentempel', labelFrom: 'Gehe zum Gezeitentempel', labelTo: 'Kehre zur Bibliothek zurück' }
+  { id: 'p32', fromAreaId: 'versunkene_bibliothek', toAreaId: 'gezeitentempel', labelFrom: 'Gehe zum Gezeitentempel', labelTo: 'Kehre zur Bibliothek zurück' },
+  { id: 'p33', fromAreaId: 'gezeitentempel', toAreaId: 'perlenbecken', labelFrom: 'Betritt trotz des schwarzen Panzers das Perlenbecken', labelTo: 'Zieh dich in den Gezeitentempel zurück' },
+  {
+    id: 'p34', fromAreaId: 'perlenbecken', toAreaId: 'muschelhafen', labelFrom: 'Nimm den neuen Bootspfad zum Hafen', labelTo: 'Fahre zum Perlenbecken',
+    requirement: { kind: 'flag', flag: 'marea_befreit' }, blockedText: 'Die Strömung dreht sich noch im Kreis.', shortcut: true
+  }
 ]
 
 export const phase2Items: ItemDefinition[] = [
@@ -145,6 +175,11 @@ export const phase2Items: ItemDefinition[] = [
     description: 'Ein gut ausbalancierter Speer aus dem Muschelhafen. Seine breite Spitze hilft besonders gegen Wassergegner.',
     kind: 'weapon', weapon: { minDamage: 3, maxDamage: 5, trait: 'Bonus gegen Wassergegner' }
   },
+  {
+    id: 'morgenklinge', name: 'Morgenklinge',
+    description: 'Eine leichte, heilige Klinge. Ihr Licht durchdringt den Schattenpanzer der verdorbenen Wächter.',
+    kind: 'weapon', weapon: { minDamage: 3, maxDamage: 5, trait: 'Durchdringt Schattenpanzer' }
+  },
   { id: 'laterne', name: 'Laterne', description: 'Eine kleine Laterne für dunkle Winkel.', kind: 'tool' },
   {
     id: 'apfelbrot', name: 'Apfelbrot', description: 'Stärkender Reiseproviant mit getrockneten Apfelstücken.',
@@ -157,7 +192,15 @@ export const phase2Items: ItemDefinition[] = [
     kind: 'healing', healing: { lifeRestored: 8 }
   },
   { id: 'schleusenrad', name: 'Schleusenrad', description: 'Das vermisste Rad der Küstenschleuse.', kind: 'quest' },
-  { id: 'sonnenspiegel', name: 'Sonnenspiegel', description: 'Ein unversehrter Spiegel für den alten Leuchtturm.', kind: 'quest' }
+  { id: 'sonnenspiegel', name: 'Sonnenspiegel', description: 'Ein unversehrter Spiegel für den alten Leuchtturm.', kind: 'quest' },
+  { id: 'sonnenfunke', name: 'Sonnenfunke', description: 'Ein warmer Lichtpunkt, der selbst im Grauschleier leuchtet.', kind: 'quest' },
+  { id: 'quelltraene', name: 'Quellträne', description: 'Ein klarer Tropfen voller erinnerter Namen.', kind: 'quest' },
+  { id: 'windlied', name: 'Windlied', description: 'Eine silberne Melodie, die in Kunos Deckel summt.', kind: 'quest' },
+  { id: 'gezeitensiegel', name: 'Gezeitensiegel', description: 'Mareas altes Bannzeichen in Form einer Welle.', kind: 'quest' },
+  {
+    id: 'quellwasser', name: 'Quellwasser', description: 'Klares Wasser, das neue Kraft gibt.',
+    kind: 'healing', healing: { lifeRestored: 6, extraEffect: 'Entfernt einen Grauschleier-Effekt' }
+  }
 ]
 
 export const phase2Interactions: InteractionDefinition[] = [
@@ -213,6 +256,111 @@ export const phase2Interactions: InteractionDefinition[] = [
     requirement: { kind: 'all', requirements: [{ kind: 'flag', flag: 'archiv_geoeffnet' }, { kind: 'flag', flag: 'schleusenrad_geborgen' }] },
     blockedText: 'Kuno möchte zuerst das Rätsel des Archivs und den Hinweis am überfluteten Markt klären.',
     effects: [{ kind: 'setFlag', flag: 'phase2_abgeschlossen' }]
+  },
+  {
+    id: 'truhe_gezeiten_interaktion', areaId: 'gezeitentempel', actionType: 'OPEN_CHEST', label: 'Öffne die bewachte Tempeltruhe',
+    description: 'Der Wasserwächter hat den Weg zur Truhe freigegeben.',
+    resultText: 'In der Tempeltruhe stehen zwei fest verschlossene Fläschchen Quellwasser.',
+    requirement: { kind: 'flag', flag: 'wasserwaechter_besiegt' },
+    blockedText: 'Ein langsamer Wasserwächter bewacht die Truhe.', chestId: 'truhe_gezeiten',
+    effects: [{ kind: 'addItem', itemId: 'quellwasser', quantity: 2 }]
+  },
+  {
+    id: 'sonnenfunke_erwecken', areaId: 'morgen_tempel', actionType: 'COMPLETE_INTERACTION', label: 'Fange den Sonnenfunken',
+    description: 'Der Sonnenspiegel lenkt den blassen Morgen auf den ersten Gabenplatz.',
+    resultText: 'Du hältst den Sonnenspiegel in den Lichtstrahl. Ein goldener Funke löst sich und schwebt in den steinernen Baum.',
+    requirement: { kind: 'item', itemId: 'sonnenspiegel' },
+    blockedText: 'Für dieses Bild fehlt ein unversehrter Spiegel.',
+    effects: [{ kind: 'addItem', itemId: 'sonnenfunke', quantity: 1 }, { kind: 'setFlag', flag: 'sonnenfunke_eingesetzt' }]
+  },
+  {
+    id: 'quelltraene_erwecken', areaId: 'morgen_tempel', actionType: 'COMPLETE_INTERACTION', label: 'Erwecke die Quellträne',
+    description: 'Das geborgene Schleusenrad passt in den zweiten Gabenplatz.',
+    resultText: 'Als du das Schleusenrad drehst, fliesst klares Wasser durch die Steinlinien. Ein einzelner Tropfen bleibt als Quellträne zurück.',
+    requirement: { kind: 'item', itemId: 'schleusenrad' },
+    blockedText: 'Im zweiten Bild fehlt das Rad, das den Wasserweg öffnet.',
+    effects: [{ kind: 'addItem', itemId: 'quelltraene', quantity: 1 }, { kind: 'setFlag', flag: 'quelltraene_eingesetzt' }]
+  },
+  {
+    id: 'windlied_erwecken', areaId: 'morgen_tempel', actionType: 'COMPLETE_INTERACTION', label: 'Spiele Kunos Windlied',
+    description: 'Kuno hat auf euren Wegen eine kurze Windmelodie wiedergefunden.',
+    resultText: 'Kuno öffnet seinen Deckel. Der Küstenwind summt darin drei helle Töne, die als silberne Linie zum dritten Gabenplatz steigen.',
+    requirement: { kind: 'flag', flag: 'phase2_abgeschlossen' },
+    blockedText: 'Erkunde zuerst die Wege bis zum Gezeitentempel, damit Kuno sich an die Melodie erinnert.',
+    effects: [{ kind: 'addItem', itemId: 'windlied', quantity: 1 }, { kind: 'setFlag', flag: 'windlied_eingesetzt' }]
+  },
+  {
+    id: 'morgenklinge_ziehen', areaId: 'morgen_tempel', actionType: 'COMPLETE_INTERACTION', label: 'Ziehe die Morgenklinge',
+    description: 'Alle drei Gaben leuchten im steinernen Baum.',
+    resultText: 'Der steinerne Baum öffnet seine Äste. Die Klinge wird leicht. Auf ihrer Seite erscheinen Worte: «Finde den Weg. Kehre zurück. Geh nicht allein.»',
+    requirement: { kind: 'all', requirements: [
+      { kind: 'item', itemId: 'sonnenfunke' }, { kind: 'item', itemId: 'quelltraene' }, { kind: 'item', itemId: 'windlied' }
+    ] },
+    blockedText: 'Die Morgenklinge erwacht erst, wenn Sonnenfunke, Quellträne und Windlied eingesetzt sind.',
+    effects: [
+      { kind: 'removeItem', itemId: 'sonnenfunke', quantity: 1 },
+      { kind: 'removeItem', itemId: 'quelltraene', quantity: 1 },
+      { kind: 'removeItem', itemId: 'windlied', quantity: 1 },
+      { kind: 'addItem', itemId: 'morgenklinge', quantity: 1 },
+      { kind: 'setFlag', flag: 'morgenklinge_erweckt' }
+    ]
+  }
+]
+
+export const phase4Enemies: EnemyDefinition[] = [
+  {
+    id: 'pfuetzenhopser', name: 'Pfützenhopser', kind: 'normal' as const, maxLife: 8, defense: 0, tags: ['water'],
+    movesByPhase: { 1: [
+      { id: 'spritzer', name: 'Spritzender Hüpfer', telegraph: 'Der Pfützenhopser wippt vor und zurück.', icon: '⌁', damage: 2, kind: 'normal' as const },
+      { id: 'weiter_sprung', name: 'Weiter Sprung', telegraph: 'Er duckt sich tief für einen weiten Sprung.', icon: '↗', damage: 4, kind: 'heavy' as const, defendNegates: true, vulnerableAfterDefend: true }
+    ] }
+  },
+  {
+    id: 'wasserwaechter', name: 'Wasserwächter', kind: 'normal' as const, maxLife: 12, defense: 1, tags: ['water', 'armored'],
+    movesByPhase: { 1: [
+      { id: 'wasserhieb', name: 'Wasserhieb', telegraph: 'Wasser sammelt sich um den steinernen Arm.', icon: '≈', damage: 3, kind: 'normal' as const },
+      { id: 'schildstoss', name: 'Schildstoss', telegraph: 'Der Wächter stemmt seinen Schild vor und holt aus.', icon: '◈', damage: 5, kind: 'heavy' as const, defendNegates: true, vulnerableAfterDefend: true }
+    ] }
+  },
+  {
+    id: 'marea', name: 'Marea, Wächterin der Gezeiten', kind: 'boss' as const, maxLife: 24, defense: 1, tags: ['water', 'boss'], shadowArmor: true, phaseTwoAtLife: 12,
+    movesByPhase: {
+      1: [
+        { id: 'wellenrolle', name: 'Wellenrolle', telegraph: 'Das Wasser steigt. Marea richtet sich für eine gewaltige Rolle aus.', icon: '≋', damage: 7, kind: 'heavy' as const, defendNegates: true, vulnerableAfterDefend: true },
+        { id: 'panzer', name: 'Schwarzer Panzer', telegraph: 'Marea zieht Kopf und Beine ein. Schwarzes Glas bedeckt jeden Spalt.', icon: '⬢', damage: 0, kind: 'guard' as const },
+        { id: 'flutstoss', name: 'Flutstoss', telegraph: 'Eine breite Welle sammelt sich vor Mareas Panzer.', icon: '≈', damage: 4, kind: 'normal' as const }
+      ],
+      2: [
+        { id: 'kleine_wellen', name: 'Wirbelnde Wellen', telegraph: 'Zwei kleinere Wellen kreisen von beiden Seiten heran.', icon: '∿', damage: 4, kind: 'normal' as const },
+        { id: 'wellenrolle', name: 'Schnelle Wellenrolle', telegraph: 'Das Wasser steigt rasch. Marea zielt auf eine angebrochene Säule.', icon: '≋', damage: 8, kind: 'heavy' as const, defendNegates: true, vulnerableAfterDefend: true },
+        { id: 'panzer', name: 'Schwarzer Panzer', telegraph: 'Marea schliesst ihren Panzer. Nur schwarzes Glas bleibt sichtbar.', icon: '⬢', damage: 0, kind: 'guard' as const }
+      ]
+    }
+  }
+]
+
+export const phase4Encounters: EncounterDefinition[] = [
+  {
+    id: 'begegnung_pfuetzenhopser', areaId: 'kuestenpfad', enemyId: 'pfuetzenhopser',
+    label: 'Stelle dich dem Pfützenhopser', description: 'Das kleine Wasserwesen versperrt eine Muschelspur, kann aber umgangen werden.',
+    fleeAreaId: 'drei_wege_platz', victoryText: 'Der Pfützenhopser platscht ins flache Wasser und hüpft davon.',
+    rewardEffects: [{ kind: 'setFlag', flag: 'pfuetzenhopser_besiegt' }]
+  },
+  {
+    id: 'begegnung_wasserwaechter', areaId: 'gezeitentempel', enemyId: 'wasserwaechter',
+    label: 'Fordere den Wasserwächter heraus', description: 'Ein langsamer Wächter steht vor einer alten Tempeltruhe.',
+    fleeAreaId: 'versunkene_bibliothek', victoryText: 'Der Wasserwächter senkt den Schild und wird wieder zu einer stillen Statue.',
+    rewardEffects: [{ kind: 'setFlag', flag: 'wasserwaechter_besiegt' }]
+  },
+  {
+    id: 'boss_marea', areaId: 'perlenbecken', enemyId: 'marea',
+    label: 'Stelle dich Marea und ihrem Schattenpanzer', description: 'Gewöhnliche Waffen können das schwarze Glas nicht durchdringen. Ein Rückzug bleibt möglich.',
+    fleeAreaId: 'gezeitentempel', victoryText: 'Das schwarze Glas wird zu klarem Wasser. Marea ist frei und legt das Gezeitensiegel vor dich.',
+    rewardEffects: [
+      { kind: 'setFlag', flag: 'marea_befreit' },
+      { kind: 'addItem', itemId: 'gezeitensiegel', quantity: 1 },
+      { kind: 'unlockPassage', passageId: 'p34' }
+    ]
   }
 ]
 
@@ -221,6 +369,8 @@ export const phase2World: WorldDefinition = {
   passages: phase2Passages,
   items: phase2Items,
   interactions: phase2Interactions,
+  enemies: phase4Enemies,
+  encounters: phase4Encounters,
   startAreaId: 'sonnenwacht',
   sliceGoalFlag: 'phase2_abgeschlossen'
 }

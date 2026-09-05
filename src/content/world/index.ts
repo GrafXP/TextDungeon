@@ -1,6 +1,9 @@
 import { assertWorldValid } from '../../engine/worldValidator'
-import { phase2World } from './phase2World'
+import { campaignWorld } from './campaignWorld'
 
-assertWorldValid(phase2World)
+assertWorldValid(campaignWorld)
 
-export { phase2World }
+// Keep the original export name while older saves and components migrate to the
+// complete campaign. Content IDs from the vertical slice remain stable.
+export const phase2World = campaignWorld
+export { campaignWorld }

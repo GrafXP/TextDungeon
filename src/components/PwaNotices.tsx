@@ -1,6 +1,8 @@
 import { useInstallPrompt, useOnlineStatus, useServiceWorkerUpdate } from '../app/usePwa'
+import { useAppState } from '../app/AppState'
 
 export function PwaNotices() {
+  const { saveStatus } = useAppState()
   const online = useOnlineStatus()
   const { canInstall, install } = useInstallPrompt()
   const {
@@ -16,7 +18,7 @@ export function PwaNotices() {
     return (
       <div className="system-notice system-notice--action" role="status">
         <span>Eine neue Version ist bereit.</span>
-        <button onClick={() => void updateServiceWorker(true)}>Jetzt laden</button>
+        <button disabled={saveStatus === 'saving' || saveStatus === 'error'} onClick={() => void updateServiceWorker(true)}>{saveStatus === 'saving' || saveStatus === 'error' ? 'Zuerst Abenteuer speichern' : 'Jetzt laden'}</button>
         <button className="text-button" onClick={() => setNeedRefresh(false)}>Später</button>
       </div>
     )

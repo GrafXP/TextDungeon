@@ -4,12 +4,16 @@ import type { WorldDefinition } from '../domain/content'
 import { validateWorld } from './worldValidator'
 
 describe('Weltvalidator', () => {
-  it('bestätigt zehn verbundene und lösbare Testorte', () => {
+  it('bestätigt die vollständige, offene und lösbare Kampagnenwelt', () => {
     const report = validateWorld(phase2World)
 
-    expect(phase2World.areas).toHaveLength(10)
+    expect(phase2World.areas).toHaveLength(41)
+    expect(phase2World.passages).toHaveLength(55)
+    expect(phase2World.enemies).toHaveLength(14)
+    expect(phase2World.encounters).toHaveLength(14)
     expect(report.valid).toBe(true)
-    expect(report.reachableAreaIds).toHaveLength(10)
+    expect(report.reachableAreaIds).toHaveLength(41)
+    expect(report.freelyReachableAreaIds).toHaveLength(35)
     expect(report.sliceGoalReachable).toBe(true)
   })
 
@@ -44,5 +48,14 @@ describe('Weltvalidator', () => {
     }
 
     expect(validateWorld(broken).errors).toContain('selbst_sperre sperrt archivschluessel hinter demselben Gegenstand ein.')
+  })
+
+  it('findet Begegnungen mit unbekannten Gegnern', () => {
+    const broken: WorldDefinition = {
+      ...phase2World,
+      encounters: [{ ...phase2World.encounters[0], id: 'kaputter_kampf', enemyId: 'niemand' }]
+    }
+
+    expect(validateWorld(broken).errors).toContain('kaputter_kampf verwendet den unbekannten Gegner niemand.')
   })
 })

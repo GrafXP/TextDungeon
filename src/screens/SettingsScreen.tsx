@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAppState } from '../app/AppState'
 import type { GameSave } from '../domain/game'
 import type { TextSize } from '../domain/settings'
+import { campaignWorld } from '../content/world/campaignWorld'
 import { createSaveExport, DataValidationError, parseSaveImport } from '../storage/validation'
 
 function downloadSave(save: GameSave) {
@@ -30,9 +31,11 @@ export function SettingsScreen() {
   const [showReset, setShowReset] = useState(false)
   const [busy, setBusy] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
+  const importSelection = useRef(0)
   const navigate = useNavigate()
 
   const selectImport = async (event: ChangeEvent<HTMLInputElement>) => {
+    const selection = ++importSelection.current
     setImportError(null)
     setPendingImport(null)
     const file = event.target.files?.[0]
@@ -42,9 +45,13 @@ export function SettingsScreen() {
       return
     }
     try {
-      setPendingImport(parseSaveImport(await file.text()))
+      const imported = parseSaveImport(await file.text())
+      if (selection === importSelection.current) {
+        setShowReset(false)
+        setPendingImport(imported)
+      }
     } catch (error) {
-      setImportError(error instanceof DataValidationError ? error.message : 'Die Datei konnte nicht gelesen werden.')
+      if (selection === importSelection.current) setImportError(error instanceof DataValidationError ? error.message : 'Die Datei konnte nicht gelesen werden.')
     }
   }
 
@@ -113,7 +120,7 @@ export function SettingsScreen() {
       <section className="settings-card storage-card" aria-labelledby="storage-settings">
         <div className="setting-intro"><span aria-hidden="true">▣</span><div><h2 id="storage-settings">Abenteuer verwalten</h2><p>Spielstände bleiben lokal in diesem Browser.</p></div></div>
         {game ? (
-          <div className="save-summary"><span className="save-avatar" aria-hidden="true">✦</span><div><strong>{game.playerName}</strong><small>Sonnenwacht · Runde {game.turn}</small></div></div>
+          <div className="save-summary"><span className="save-avatar" aria-hidden="true">✦</span><div><strong>{game.playerName}</strong><small>{campaignWorld.areas.find((area) => area.id === game.currentAreaId)?.name} · Runde {game.turn}</small></div></div>
         ) : (
           <p className="muted-copy">{adventureStatus === 'invalid' ? 'Der gespeicherte Spielstand ist beschädigt und bleibt unangetastet, bis du ihn zurücksetzt.' : 'Noch kein gültiges Abenteuer gespeichert.'}</p>
         )}
@@ -122,10 +129,10 @@ export function SettingsScreen() {
           <button className="button button--secondary" disabled={!game} onClick={() => game && downloadSave(game)}>Spielstand exportieren</button>
           <label className="button button--secondary file-button">
             Spielstand importieren
-            <input ref={fileInput} type="file" accept="application/json,.json" onChange={(event) => void selectImport(event)} />
+            <input ref={fileInput} disabled={busy} type="file" accept="application/json,.json" onChange={(event) => void selectImport(event)} />
           </label>
           {(game || adventureStatus === 'invalid' || adventureStatus === 'error') && (
-            <button className="button button--danger-quiet" onClick={() => setShowReset(true)}>Abenteuer zurücksetzen</button>
+            <button className="button button--danger-quiet" disabled={busy} onClick={() => { ++importSelection.current; setPendingImport(null); setShowReset(true) }}>Abenteuer zurücksetzen</button>
           )}
         </div>
 

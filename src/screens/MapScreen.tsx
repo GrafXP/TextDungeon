@@ -19,12 +19,18 @@ export function MapScreen() {
         <p>Besuchte Orte sind kräftig markiert. Helle Orte kennst du bereits von einem angrenzenden Weg.</p>
       </header>
 
-      <section className="world-map" aria-labelledby="visual-map-title">
+      <p>Die Karte lässt sich seitlich verschieben. Alle Wege und Sperren stehen auch in der Textliste darunter.</p>
+      {game.flags.includes('kartennotiz_sichtbar') && <p>Alvas Notiz: «Eine gute Karte zeigt nicht nur, wohin du gehst. Sie zeigt auch, wer auf deine Rückkehr wartet.»</p>}
+      <section className="world-map" tabIndex={0} aria-labelledby="visual-map-title">
         <h2 id="visual-map-title" className="visually-hidden">Grafische Karte</h2>
-        <svg viewBox="40 25 680 535" role="img" aria-labelledby="map-title map-description">
-          <title id="map-title">Entdeckte Orte in Sonnenmark und an der Spiegelküste</title>
+        <svg viewBox="20 45 960 730" role="img" aria-labelledby="map-title map-description">
+          <title id="map-title">Entdeckte Orte in ganz Talora</title>
           <desc id="map-description">Die gleiche Verbindungsliste wie in der Reiseansicht, grafisch dargestellt.</desc>
-          <path className="region-shape region-shape--coast" d="M330 200 C520 120 730 210 720 570 L300 570 C350 440 300 320 330 200Z" />
+          <path className="region-shape region-shape--forest" d="M35 190 Q210 120 345 245 L300 610 Q140 680 35 565Z" />
+          <path className="region-shape region-shape--mark" d="M315 225 Q485 185 630 285 L575 480 Q430 505 310 410Z" />
+          <path className="region-shape region-shape--mountain" d="M555 55 Q800 15 970 125 L925 420 Q720 400 565 335Z" />
+          <path className="region-shape region-shape--coast" d="M535 395 Q765 360 970 430 L955 705 Q730 760 535 600Z" />
+          <path className="region-shape region-shape--final" d="M455 470 L555 470 L580 775 L430 775Z" />
           {knownPassages.map((passage) => {
             const from = phase2World.areas.find((area) => area.id === passage.fromAreaId)!
             const to = phase2World.areas.find((area) => area.id === passage.toAreaId)!
@@ -36,7 +42,7 @@ export function MapScreen() {
             const current = game.currentAreaId === area.id
             return (
               <g key={area.id} className={`map-node${visited ? ' map-node--visited' : ' map-node--known'}${current ? ' map-node--current' : ''}`} transform={`translate(${area.mapPosition.x} ${area.mapPosition.y})`}>
-                {area.safe ? <rect x="-11" y="-11" width="22" height="22" rx="4" /> : <circle r="11" />}
+                {area.safe && evaluateRequirement(area.sanctuaryRequirement, game).met ? <rect x="-11" y="-11" width="22" height="22" rx="4" /> : <circle r="11" />}
                 {current && <circle className="current-ring" r="18" />}
                 <text y="-19" textAnchor="middle">{area.name}</text>
               </g>
@@ -60,6 +66,7 @@ export function MapScreen() {
               <li key={area.id}>
                 <div><strong>{area.name}</strong>{game.currentAreaId === area.id && <span>Aktueller Ort</span>}</div>
                 <p>{game.visitedAreaIds.includes(area.id) ? 'Besucht' : 'Bekannt'} · Wege nach {connections.map((entry) => entry.name).join(', ') || 'noch unbekannt'}</p>
+                {knownPassages.filter((passage) => (passage.fromAreaId === area.id || passage.toAreaId === area.id) && !evaluateRequirement(passage.requirement, game).met && !game.unlockedPassageIds.includes(passage.id)).map((passage) => <p className="blocked-reason" key={passage.id}>Gesperrt: {passage.fromAreaId === area.id ? passage.labelFrom : passage.labelTo}. {passage.blockedText}</p>)}
               </li>
             )
           })}

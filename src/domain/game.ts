@@ -1,5 +1,8 @@
-export const SAVE_SCHEMA_VERSION = 2
-export const CONTENT_VERSION = 3
+export const SAVE_SCHEMA_VERSION = 5
+export const CONTENT_VERSION = 5
+
+/** Upper bound so a very long run cannot grow the save without limit. */
+export const JOURNAL_LIMIT = 1000
 
 export type AreaId = string
 export type ItemId = string
@@ -20,8 +23,20 @@ export interface PuzzleState {
 export interface CombatState {
   encounterId: EncounterId
   enemyLife: number
+  enemyMaxLife: number
   phase: number
   announcedMoveId: string
+  round: number
+  enemyStance: 'normal' | 'guarded' | 'vulnerable'
+  entryMode: 'normal' | 'early-boss' | 'prepared-boss'
+  canFlee: boolean
+  pendingSealItemId: ItemId | null
+  placedSealItemIds: ItemId[]
+  awaitingFinalPromise: boolean
+  effects: Array<{
+    id: string
+    remainingEnemyTurns: number
+  }>
 }
 
 export interface GameEvent {
@@ -54,7 +69,10 @@ export interface GameSave {
   flags: GameFlag[]
   lastSanctuaryId: AreaId
   activeCombat: CombatState | null
+  /** The last few events, used for the inline "Letzte Ereignisse" list. */
   recentEvents: GameEvent[]
+  /** The whole run's events, shown on the Tagebuch screen. */
+  journal: GameEvent[]
   rngState: number
   turn: number
 }
@@ -65,6 +83,7 @@ function newRunId(): string {
 
 export function createNewGame(playerName: string): GameSave {
   const name = playerName.trim() || 'Abenteurerin'
+  const firstEvent: GameEvent = { id: 'adventure-started', text: `${name}, dein Abenteuer beginnt.`, turn: 0 }
 
   return {
     schemaVersion: SAVE_SCHEMA_VERSION,
@@ -94,13 +113,8 @@ export function createNewGame(playerName: string): GameSave {
     flags: [],
     lastSanctuaryId: 'sonnenwacht',
     activeCombat: null,
-    recentEvents: [
-      {
-        id: 'adventure-started',
-        text: `${name}, dein Abenteuer beginnt.`,
-        turn: 0
-      }
-    ],
+    recentEvents: [firstEvent],
+    journal: [firstEvent],
     rngState: Math.floor(Math.random() * 2_147_483_647) || 1,
     turn: 0
   }

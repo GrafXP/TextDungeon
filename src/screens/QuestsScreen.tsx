@@ -1,10 +1,13 @@
 import { useAppState } from '../app/AppState'
-import { getQuestViews } from '../engine/selectors'
+import { getMainGoal, getQuestViews } from '../engine/selectors'
+import { cardNotes } from '../content/world/campaignExtras'
 
 export function QuestsScreen() {
   const { game } = useAppState()
   if (!game) return null
   const quests = getQuestViews(game)
+  const mainGoal = getMainGoal(game)
+  const foundNotes = Object.entries(cardNotes).filter(([id]) => game.discoveredClueIds.includes(id))
 
   return (
     <main id="main-content" className="screen page-screen quests-screen">
@@ -18,8 +21,8 @@ export function QuestsScreen() {
         <div className="quest-compass" aria-hidden="true">↗</div>
         <div>
           <p className="eyebrow">Hauptziel</p>
-          <h2 id="main-goal-title">Erkunde die verblassenden Wege</h2>
-          <p>Finde heraus, was im Kartenarchiv verborgen ist und warum das Wasser an der Küste steigt.</p>
+          <h2 id="main-goal-title">{mainGoal.title}</h2>
+          <p>{mainGoal.description}</p>
         </div>
       </section>
 
@@ -40,6 +43,15 @@ export function QuestsScreen() {
           </li>
         ))}
       </ol>
+      <section className="card-notes" aria-labelledby="card-notes-title">
+        <h2 id="card-notes-title">Alvas Kartenränder</h2>
+        <p className="card-notes-intro">{foundNotes.length} von 6 gefunden. Die Notizen erzählen Alvas Erinnerungen.</p>
+        {foundNotes.length === 0 ? (
+          <p className="muted-copy">Noch keine Notiz gefunden. Sie liegen an den Rändern der Karte.</p>
+        ) : (
+          <ul>{foundNotes.map(([id, note]) => <li key={id}><p>{note}</p></li>)}</ul>
+        )}
+      </section>
     </main>
   )
 }

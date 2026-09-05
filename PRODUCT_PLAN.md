@@ -2,7 +2,7 @@
 
 Status: überarbeitet für ein deutschsprachiges Abenteuerspiel für Kinder von 8 bis 12 Jahren.
 
-Prüfstand: 5. September 2026. Geschichte und Welt sowie App-Grundlage, Erkundungs-Vertikalschnitt, Inventar und Schatz aus Phase 1 bis 3 sind implementiert. Zehn verbundene Testorte, typisierte Inhaltsdaten, automatische Spieltests und der Weltvalidator sind vorhanden; Kampf und die vollständige Kampagne folgen in den weiteren Phasen.
+Prüfstand: 5. September 2026. Geschichte, Welt und die technische sowie inhaltliche Umsetzung von Phase 1 bis 5 sind vorhanden. Alle 41 Orte und 55 Passagen, die drei unabhängigen Gabenwege, sechs Waffen, zehn normale Gegnertypen, drei Wächter und die dreiphasige Raugrim-Verbannung sind integriert. Gespeicherte Siegellichter, automatische Balance-Simulationen, Spieltests und der erweiterte Weltvalidator prüfen die Kampagne. Die Beobachtung mit Kindern ist vorbereitet, aber noch nicht durchgeführt.
 
 Die erste Kampagne, ihre Figuren, Rätselketten, Gegner und 41 Schauplätze sind in der [`STORY_BIBLE.md`](./STORY_BIBLE.md) als Erzähl- und Weltbibel beschrieben.
 
@@ -475,6 +475,8 @@ Ergebnis: vollständige Gegenstands-, Werkzeug- und Schlosskette ohne Kampf.
 
 ### Phase 4 — Kampf und erster Boss
 
+**Stand:** Technisch umgesetzt. Die manuelle Erprobung mit Kindern bleibt offen; der Ablauf und die Beobachtungsfragen stehen in `PLAYTEST_GUIDE.md`.
+
 - Angriff, Verteidigung, Gegenstand, Flucht, Sieg und Rettung implementieren.
 - Laufende Kämpfe und Zufallszustand speichern.
 - Zwei normale Gegner und einen Boss mit zwei Phasen integrieren.
@@ -485,6 +487,8 @@ Ergebnis: vollständige Gegenstands-, Werkzeug- und Schlosskette ohne Kampf.
 Ergebnis: kompletter Ablauf von Erkundung über Vorbereitung bis Bossbefreiung.
 
 ### Phase 5 — Kampagnenproduktion
+
+**Stand:** Umgesetzt. Die vollständige Kampagne ist spielbar und automatisch geprüft; sprachliche und spielerische Anpassungen aus der manuellen Erprobung folgen in Phase 6.
 
 - Alle 41 Orte, Quests, Gegenstände, Gegner und Abkürzungen einbauen.
 - Vollständige deutsche Erst- und Wiederbesuchstexte schreiben.

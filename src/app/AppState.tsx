@@ -46,6 +46,10 @@ export function AppStateProvider({ children }: PropsWithChildren) {
   const [adventureStatus, setAdventureStatus] = useState<AdventureStatus>('loading')
   const [game, setGame] = useState<GameSave | null>(null)
   const gameRef = useRef<GameSave | null>(null)
+  const replacingRef = useRef(false)
+  const saveRevision = useRef(0)
+  const settingsRevision = useRef(0)
+  const settingsRef = useRef<AppSettings>(DEFAULT_SETTINGS)
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
   const [settingsReady, setSettingsReady] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -68,6 +72,7 @@ export function AppStateProvider({ children }: PropsWithChildren) {
         }
 
         if (settingsResult.status === 'ready') {
+          settingsRef.current = settingsResult.value
           setSettings(settingsResult.value)
         } else if (settingsResult.status === 'invalid' || settingsResult.status === 'error') {
           setSettingsError(settingsResult.error.message)
@@ -81,21 +86,25 @@ export function AppStateProvider({ children }: PropsWithChildren) {
   }, [])
 
   const persistAdventure = useCallback(async (nextGame: GameSave): Promise<boolean> => {
+    const revision = ++saveRevision.current
     setSaveStatus('saving')
     setSaveError(null)
     try {
       await gameRepository.saveAdventure(nextGame)
-      setSaveStatus('saved')
+      if (revision === saveRevision.current) setSaveStatus('saved')
       return true
     } catch (error) {
-      setSaveStatus('error')
-      setSaveError(messageFrom(error, 'Das Abenteuer konnte nicht gespeichert werden.'))
+      if (revision === saveRevision.current) {
+        setSaveStatus('error')
+        setSaveError(messageFrom(error, 'Das Abenteuer konnte nicht gespeichert werden.'))
+      }
       return false
     }
   }, [])
 
   const startAdventure = useCallback(
     async (name: string) => {
+      if (replacingRef.current) return false
       const nextGame = createNewGame(name)
       gameRef.current = nextGame
       setGame(nextGame)
@@ -109,7 +118,7 @@ export function AppStateProvider({ children }: PropsWithChildren) {
   const updateAdventure = useCallback(
     (update: (current: GameSave) => GameSave) => {
       const current = gameRef.current
-      if (!current) return
+      if (!current || replacingRef.current) return
       const nextGame = update(current)
       if (nextGame === current) return
       gameRef.current = nextGame
@@ -120,11 +129,15 @@ export function AppStateProvider({ children }: PropsWithChildren) {
   )
 
   const retrySave = useCallback(async () => {
-    if (!game) return false
-    return persistAdventure(game)
-  }, [game, persistAdventure])
+    if (!gameRef.current || replacingRef.current) return false
+    return persistAdventure(gameRef.current)
+  }, [persistAdventure])
 
   const resetAdventure = useCallback(async () => {
+    if (replacingRef.current) return false
+    replacingRef.current = true
+    ++saveRevision.current
+    setSaveStatus('saving')
     try {
       await gameRepository.deleteAdventure()
       gameRef.current = null
@@ -138,31 +151,39 @@ export function AppStateProvider({ children }: PropsWithChildren) {
       setSaveError(messageFrom(error, 'Das Abenteuer konnte nicht zurückgesetzt werden.'))
       setSaveStatus('error')
       return false
+    } finally {
+      replacingRef.current = false
     }
   }, [])
 
   const importAdventure = useCallback(
     async (nextGame: GameSave) => {
-      const saved = await persistAdventure(nextGame)
-      if (saved) {
-        gameRef.current = nextGame
-        setGame(nextGame)
-        setAdventureStatus('ready')
-        setLoadError(null)
+      if (replacingRef.current) return false
+      replacingRef.current = true
+      try {
+        const saved = await persistAdventure(nextGame)
+        if (saved) {
+          gameRef.current = nextGame
+          setGame(nextGame)
+          setAdventureStatus('ready')
+          setLoadError(null)
+        }
+        return saved
+      } finally {
+        replacingRef.current = false
       }
-      return saved
     },
     [persistAdventure]
   )
 
   const updateSettings = useCallback((patch: Partial<AppSettings>) => {
-    setSettings((current) => {
-      const nextSettings = { ...current, ...patch }
-      setSettingsError(null)
-      void gameRepository.saveSettings(nextSettings).catch((error) => {
-        setSettingsError(messageFrom(error, 'Die Einstellungen konnten nicht gespeichert werden.'))
-      })
-      return nextSettings
+    const nextSettings = { ...settingsRef.current, ...patch }
+    const revision = ++settingsRevision.current
+    settingsRef.current = nextSettings
+    setSettings(nextSettings)
+    setSettingsError(null)
+    void gameRepository.saveSettings(nextSettings).catch((error) => {
+      if (revision === settingsRevision.current) setSettingsError(messageFrom(error, 'Die Einstellungen konnten nicht gespeichert werden.'))
     })
   }, [])
 

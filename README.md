@@ -21,7 +21,7 @@ npm run preview
 
 ## Stand
 
-Phase 1 bis Phase 3 des [`PRODUCT_PLAN.md`](./PRODUCT_PLAN.md) sind umgesetzt:
+Die technische und inhaltliche Umsetzung von Phase 1 bis Phase 5 des [`PRODUCT_PLAN.md`](./PRODUCT_PLAN.md) ist abgeschlossen. Die geplante Erprobung mit Kindern bleibt der nächste manuelle Validierungsschritt:
 
 - responsive App-Hülle und Routing für Start, Spiel, Karte, Aufgaben und Einstellungen;
 - PWA-Manifest, Service Worker, Offline- und Updatezustände sowie Installationshinweis;
@@ -31,13 +31,22 @@ Phase 1 bis Phase 3 des [`PRODUCT_PLAN.md`](./PRODUCT_PLAN.md) sind umgesetzt:
 - Textgrösse, hoher Kontrast, reduzierte Bewegung und Toneinstellung;
 - Starten und Fortsetzen eines lokalen Abenteuers;
 - reine Reducer-Spiellogik für Reisen, Untersuchen, Truhen, Funde und Anforderungen;
-- zehn verbundene Orte mit Rundwegen und zwei datengetriebenen Abkürzungen;
-- Archivschlüssel-, Hebelstangen- und Schatztruhenkette mit sichtbaren Sperrgründen;
+- alle 41 Orte und 55 Verbindungen der Erzählbibel, davon 35 ohne Questfortschritt erreichbar;
+- sechs regionale Rundwege und Abkürzungen mit sichtbaren, datengetriebenen Sperrgründen;
 - Aufgabenansicht mit freiwilligen Hinweisen und entdeckungsbasierte SVG-Karte;
 - Weltvalidator für IDs, Ziele, Anforderungen, Sackgassen und Lösbarkeit;
 - responsives Inventar mit Gegenstandsdetails, Fokusführung und erlaubten Aktionen;
-- Reiseschwert und Hafenspeer mit unterschiedlichen Schadenswerten und Eigenschaften;
-- Apfelbrot und Waldsalbe mit atomarer Heilung sowie zwei einmalig plünderbare Truhen;
-- gespeicherte Waffenausrüstung und vor versehentlichem Verbrauch geschützte wichtige Gegenstände.
+- sechs Waffen mit unterschiedlichen Schadenswerten, Panzerungs- und Regionsboni;
+- fünf Heilmittel, erneuerbarer Grundproviant und neun einmalig plünderbare Truhen;
+- gespeicherte Waffenausrüstung und vor versehentlichem Verbrauch geschützte wichtige Gegenstände;
+- rundenbasierte Kämpfe mit Angriff, Verteidigung, Heilmitteln, Flucht und angekündigten Gegnerzügen;
+- zehn normale Gegnertypen, drei zweiphasige Wächter und Raugrim als dreiphasiger Endboss;
+- gespeicherter Kampf- und Zufallszustand, reproduzierbare Züge und verlustfreie Rettung zur letzten Raststelle;
+- früher, sicher rückziehbarer Bosskontakt ohne Morgenklinge sowie dauerhaft geschlossener Rückweg nach dem ersten wirksamen Boss-Treffer;
+- Sonnenfunke, Quellträne und Windlied als unabhängig lösbare Gabenketten;
+- Arbor, Marea und Voltaro in beliebiger Reihenfolge sowie alle drei Wächtersiegel;
+- vollständige Verbannung mit drei gespeicherten Siegellichtern und Alvas Schlussversprechen;
+- sechs Kartenränder, drei kleine Reparaturen, optionale Werkzeuge und dauerhaft zugängliches Nachspiel;
+- regionsbezogene Kartenflächen, lokale CSS-Illustrationen und automatische Balance-Simulationen.
 
-Kämpfe, Gegnerzüge und Rettung beginnen gemäss Plan mit Phase 4.
+Der Ablauf für die ausstehende Beobachtung mit Kindern steht in [`PLAYTEST_GUIDE.md`](./PLAYTEST_GUIDE.md).

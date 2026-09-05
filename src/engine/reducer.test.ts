@@ -61,6 +61,10 @@ describe('Erkundungs-Reducer', () => {
       { type: 'OPEN_CHEST', interactionId: 'truhe_markt_interaktion' },
       { type: 'MOVE', passageId: 'p04', toAreaId: 'garten_der_namen' },
       { type: 'INSPECT', areaId: 'garten_der_namen' },
+      { type: 'PUZZLE_INPUT', puzzleId: 'symbolsteine', controlId: 'sequence', value: 2 },
+      { type: 'PUZZLE_INPUT', puzzleId: 'symbolsteine', controlId: 'sequence', value: 3 },
+      { type: 'PUZZLE_INPUT', puzzleId: 'symbolsteine', controlId: 'sequence', value: 0 },
+      { type: 'PUZZLE_INPUT', puzzleId: 'symbolsteine', controlId: 'sequence', value: 1 },
       { type: 'COMPLETE_INTERACTION', interactionId: 'symbolsteine_ordnen' },
       { type: 'MOVE', passageId: 'p04', toAreaId: 'alter_markt' },
       { type: 'MOVE', passageId: 'p02', toAreaId: 'sonnenwacht' },
@@ -89,8 +93,9 @@ describe('Erkundungs-Reducer', () => {
       schleusenrad: 1,
       sonnenspiegel: 1
     })
-    expect(finished.flags).toEqual(expect.arrayContaining(['schleusenrad_geborgen', 'archiv_geoeffnet', 'phase2_abgeschlossen']))
-    expect(getQuestViews(finished).every((quest) => quest.done)).toBe(true)
+    expect(finished.flags).toEqual(expect.arrayContaining(['schleusenrad_geborgen', 'archiv_geoeffnet']))
+    expect(getQuestViews(finished)[0].current).toBe(true)
+    expect(getQuestViews(finished)[0].title).toContain('Sonnenfunken')
   })
 
   it('macht einmalige Funde nicht mehrfach verfügbar', () => {
@@ -144,7 +149,11 @@ describe('Erkundungs-Reducer', () => {
 
     const inCombat: GameSave = {
       ...withSpear,
-      activeCombat: { encounterId: 'test', enemyLife: 4, phase: 1, announcedMoveId: 'angriff' }
+      activeCombat: {
+        encounterId: 'test', enemyLife: 4, enemyMaxLife: 4, phase: 1, announcedMoveId: 'angriff',
+        round: 1, enemyStance: 'normal', entryMode: 'normal', canFlee: true,
+        pendingSealItemId: null, placedSealItemIds: [], awaitingFinalPromise: false, effects: []
+      }
     }
     expect(reduceGame(inCombat, { type: 'EQUIP_WEAPON', itemId: 'hafenspeer' }, phase2World)).toBe(inCombat)
   })
@@ -162,5 +171,36 @@ describe('Erkundungs-Reducer', () => {
     expect(opened.player.inventory.hafenspeer).toBe(1)
     expect(opened.openedChestIds).toContain('truhe_hafenspeer')
     expect(repeated).toBe(opened)
+  })
+
+  it('erweckt die Morgenklinge über drei Gaben und verbraucht jede Gabe genau einmal', () => {
+    const initial = createNewGame('Tali')
+    const atTemple: GameSave = {
+      ...initial,
+      currentAreaId: 'morgen_tempel',
+      visitedAreaIds: ['sonnenwacht', 'morgen_tempel'],
+      player: {
+        ...initial.player,
+        inventory: {
+          ...initial.player.inventory,
+          sonnenspiegel: 1,
+          schleusenrad: 1,
+          sonnenfunke: 1,
+          quelltraene: 1,
+          windlied: 1
+        }
+      }
+    }
+    const awakened = play(
+      atTemple,
+      { type: 'COMPLETE_INTERACTION', interactionId: 'morgenklinge_ziehen' }
+    )
+
+    expect(awakened.player.inventory).toMatchObject({ sonnenspiegel: 1, schleusenrad: 1, morgenklinge: 1 })
+    expect(awakened.player.inventory).not.toHaveProperty('sonnenfunke')
+    expect(awakened.player.inventory).not.toHaveProperty('quelltraene')
+    expect(awakened.player.inventory).not.toHaveProperty('windlied')
+    expect(awakened.flags).toContain('morgenklinge_erweckt')
+    expect(reduceGame(awakened, { type: 'COMPLETE_INTERACTION', interactionId: 'morgenklinge_ziehen' }, phase2World)).toBe(awakened)
   })
 })

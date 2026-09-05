@@ -5,6 +5,7 @@ import { PwaNotices } from '../components/PwaNotices'
 import { StorageNotice } from '../components/StorageNotice'
 import { MapScreen } from '../screens/MapScreen'
 import { PlayScreen } from '../screens/PlayScreen'
+import { JournalScreen } from '../screens/JournalScreen'
 import { QuestsScreen } from '../screens/QuestsScreen'
 import { SettingsScreen } from '../screens/SettingsScreen'
 import { TitleScreen } from '../screens/TitleScreen'
@@ -38,6 +39,7 @@ export function App() {
           <Route path="/spiel" element={<AdventureRoute><PlayScreen /></AdventureRoute>} />
           <Route path="/karte" element={<AdventureRoute><MapScreen /></AdventureRoute>} />
           <Route path="/aufgaben" element={<AdventureRoute><QuestsScreen /></AdventureRoute>} />
+          <Route path="/tagebuch" element={<AdventureRoute><JournalScreen /></AdventureRoute>} />
           <Route path="/einstellungen" element={<SettingsScreen />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

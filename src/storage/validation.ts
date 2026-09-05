@@ -1,5 +1,6 @@
 import {
   CONTENT_VERSION,
+  JOURNAL_LIMIT,
   SAVE_SCHEMA_VERSION,
   type CombatState,
   type GameEvent,
@@ -12,6 +13,8 @@ import {
   type AppSettings,
   type TextSize
 } from '../domain/settings'
+import { campaignWorld } from '../content/world/campaignWorld'
+import { evaluateRequirement } from '../engine/requirements'
 
 export class DataValidationError extends Error {
   constructor(message: string) {
@@ -45,15 +48,28 @@ function requireFiniteNumber(value: unknown, path: string): number {
 
 function requireNonNegativeInteger(value: unknown, path: string): number {
   const number = requireFiniteNumber(value, path)
-  if (!Number.isInteger(number) || number < 0) {
+  if (!Number.isSafeInteger(number) || number < 0) {
     throw new DataValidationError(`${path} muss eine nicht-negative ganze Zahl sein.`)
   }
   return number
 }
 
+function requirePositiveInteger(value: unknown, path: string): number {
+  const number = requireNonNegativeInteger(value, path)
+  if (number < 1) throw new DataValidationError(`${path} muss mindestens 1 sein.`)
+  return number
+}
+
+function requireBoolean(value: unknown, path: string): boolean {
+  if (typeof value !== 'boolean') throw new DataValidationError(`${path} muss wahr oder falsch sein.`)
+  return value
+}
+
 function requireStringArray(value: unknown, path: string): string[] {
   if (!Array.isArray(value)) throw new DataValidationError(`${path} muss eine Liste sein.`)
-  return value.map((entry, index) => requireString(entry, `${path}[${index}]`))
+  const strings = value.map((entry, index) => requireString(entry, `${path}[${index}]`))
+  if (new Set(strings).size !== strings.length) throw new DataValidationError(`${path} enthält doppelte Einträge.`)
+  return strings
 }
 
 function requireStringMap(value: unknown, path: string): Record<string, number> {
@@ -70,7 +86,7 @@ function parsePuzzleStates(value: unknown): Record<string, PuzzleState> {
       const state = requireRecord(stateValue, `puzzleStates.${id}`)
       const values = requireRecord(state.values, `puzzleStates.${id}.values`)
       for (const [key, entry] of Object.entries(values)) {
-        if (!['string', 'number', 'boolean'].includes(typeof entry)) {
+        if (!['string', 'number', 'boolean'].includes(typeof entry) || (typeof entry === 'number' && !Number.isFinite(entry))) {
           throw new DataValidationError(`puzzleStates.${id}.values.${key} hat einen unbekannten Wert.`)
         }
       }
@@ -79,14 +95,14 @@ function parsePuzzleStates(value: unknown): Record<string, PuzzleState> {
   )
 }
 
-function parseEvents(value: unknown): GameEvent[] {
-  if (!Array.isArray(value)) throw new DataValidationError('recentEvents muss eine Liste sein.')
-  return value.slice(-50).map((entry, index) => {
-    const event = requireRecord(entry, `recentEvents[${index}]`)
+function parseEvents(value: unknown, field = 'recentEvents', keep = 50): GameEvent[] {
+  if (!Array.isArray(value)) throw new DataValidationError(`${field} muss eine Liste sein.`)
+  return value.slice(-keep).map((entry, index) => {
+    const event = requireRecord(entry, `${field}[${index}]`)
     return {
-      id: requireString(event.id, `recentEvents[${index}].id`),
-      text: requireString(event.text, `recentEvents[${index}].text`),
-      turn: requireNonNegativeInteger(event.turn, `recentEvents[${index}].turn`)
+      id: requireString(event.id, `${field}[${index}].id`),
+      text: requireString(event.text, `${field}[${index}].text`),
+      turn: requireNonNegativeInteger(event.turn, `${field}[${index}].turn`)
     }
   })
 }
@@ -94,22 +110,69 @@ function parseEvents(value: unknown): GameEvent[] {
 function parseCombat(value: unknown): CombatState | null {
   if (value === null) return null
   const combat = requireRecord(value, 'activeCombat')
+  const enemyStance = requireString(combat.enemyStance, 'activeCombat.enemyStance')
+  if (!['normal', 'guarded', 'vulnerable'].includes(enemyStance)) {
+    throw new DataValidationError('activeCombat.enemyStance ist ungültig.')
+  }
+  const entryMode = requireString(combat.entryMode, 'activeCombat.entryMode')
+  if (!['normal', 'early-boss', 'prepared-boss'].includes(entryMode)) {
+    throw new DataValidationError('activeCombat.entryMode ist ungültig.')
+  }
+  if (!Array.isArray(combat.effects)) throw new DataValidationError('activeCombat.effects muss eine Liste sein.')
+  const effects = combat.effects.map((value, index) => {
+    const effect = requireRecord(value, `activeCombat.effects[${index}]`)
+    return {
+      id: requireString(effect.id, `activeCombat.effects[${index}].id`),
+      remainingEnemyTurns: requirePositiveInteger(effect.remainingEnemyTurns, `activeCombat.effects[${index}].remainingEnemyTurns`)
+    }
+  })
+  const enemyLife = requireNonNegativeInteger(combat.enemyLife, 'activeCombat.enemyLife')
+  const enemyMaxLife = requirePositiveInteger(combat.enemyMaxLife, 'activeCombat.enemyMaxLife')
+  if (enemyLife > enemyMaxLife) throw new DataValidationError('activeCombat.enemyLife ist grösser als das Maximum.')
+  const pendingSeal = combat.pendingSealItemId
+  if (pendingSeal !== null && typeof pendingSeal !== 'string') {
+    throw new DataValidationError('activeCombat.pendingSealItemId ist ungültig.')
+  }
   return {
     encounterId: requireString(combat.encounterId, 'activeCombat.encounterId'),
-    enemyLife: requireNonNegativeInteger(combat.enemyLife, 'activeCombat.enemyLife'),
-    phase: requireNonNegativeInteger(combat.phase, 'activeCombat.phase'),
-    announcedMoveId: requireString(combat.announcedMoveId, 'activeCombat.announcedMoveId')
+    enemyLife,
+    enemyMaxLife,
+    phase: requirePositiveInteger(combat.phase, 'activeCombat.phase'),
+    announcedMoveId: requireString(combat.announcedMoveId, 'activeCombat.announcedMoveId'),
+    round: requirePositiveInteger(combat.round, 'activeCombat.round'),
+    enemyStance: enemyStance as CombatState['enemyStance'],
+    entryMode: entryMode as CombatState['entryMode'],
+    canFlee: requireBoolean(combat.canFlee, 'activeCombat.canFlee'),
+    pendingSealItemId: pendingSeal,
+    placedSealItemIds: requireStringArray(combat.placedSealItemIds, 'activeCombat.placedSealItemIds'),
+    awaitingFinalPromise: requireBoolean(combat.awaitingFinalPromise, 'activeCombat.awaitingFinalPromise'),
+    effects
   }
 }
 
 function migrateLegacySave(value: Record<string, unknown>): Record<string, unknown> {
   const version = value.schemaVersion
   if (version === SAVE_SCHEMA_VERSION) return value
-  if (version !== 0 && version !== 1) {
+  // Every released schema below the current one migrates forward; anything else is unknown.
+  if (typeof version !== 'number' || !Number.isInteger(version) || version < 0 || version > SAVE_SCHEMA_VERSION) {
     throw new DataValidationError(`Spielstand-Version ${String(version)} wird nicht unterstützt.`)
   }
 
   const legacyPlayer = isRecord(value.player) ? value.player : {}
+
+  // Version 4 introduced the seal fields, so those saves already carry a full combat.
+  const legacyCombat = !isRecord(value.activeCombat)
+    ? null
+    : version >= 4
+      ? value.activeCombat
+      : version === 3
+        ? {
+            ...value.activeCombat,
+            pendingSealItemId: null,
+            placedSealItemIds: [],
+            awaitingFinalPromise: false
+          }
+        : null
 
   return {
     ...value,
@@ -134,14 +197,19 @@ function migrateLegacySave(value: Record<string, unknown>): Record<string, unkno
     deliveredDialogueIds: value.deliveredDialogueIds ?? [],
     puzzleStates: value.puzzleStates ?? {},
     flags: value.flags ?? [],
-    activeCombat: value.activeCombat ?? null,
+    activeCombat: legacyCombat,
     recentEvents: value.recentEvents ?? [],
+    journal: value.journal ?? value.recentEvents ?? [],
+    rngState: value.rngState ?? 1,
     turn: value.turn ?? 0
   }
 }
 
 export function migrateAndValidateGameSave(value: unknown): GameSave {
-  const source = migrateLegacySave(requireRecord(value, 'Spielstand'))
+  const original = requireRecord(value, 'Spielstand')
+  const originalContentVersion = requireNonNegativeInteger(original.contentVersion, 'contentVersion')
+  if (originalContentVersion > CONTENT_VERSION) throw new DataValidationError(`Inhaltsversion ${originalContentVersion} ist neuer als diese App.`)
+  const source = migrateLegacySave(original)
   const player = requireRecord(source.player, 'player')
   const life = requireNonNegativeInteger(player.life, 'player.life')
   const maxLife = requireNonNegativeInteger(player.maxLife, 'player.maxLife')
@@ -186,6 +254,7 @@ export function migrateAndValidateGameSave(value: unknown): GameSave {
     lastSanctuaryId: requireString(source.lastSanctuaryId, 'lastSanctuaryId'),
     activeCombat: parseCombat(source.activeCombat),
     recentEvents: parseEvents(source.recentEvents),
+    journal: parseEvents(source.journal, 'journal', JOURNAL_LIMIT),
     rngState: requireNonNegativeInteger(source.rngState, 'rngState'),
     turn: requireNonNegativeInteger(source.turn, 'turn')
   }
@@ -196,7 +265,74 @@ export function migrateAndValidateGameSave(value: unknown): GameSave {
   if (save.contentVersion > CONTENT_VERSION) {
     throw new DataValidationError(`Inhaltsversion ${save.contentVersion} ist neuer als diese App.`)
   }
+  if (originalContentVersion < 5) {
+    // The coast encounter moved to the flooded market in the full map.
+    if (save.activeCombat?.encounterId === 'begegnung_pfuetzenhopser' && save.currentAreaId === 'kuestenpfad') {
+      save.currentAreaId = 'ueberfluteter_markt'
+      save.visitedAreaIds = [...new Set([...save.visitedAreaIds, save.currentAreaId])]
+    }
+    const sanctuary = campaignWorld.areas.find((area) => area.id === save.lastSanctuaryId)
+    if (sanctuary && (!sanctuary.safe || !evaluateRequirement(sanctuary.sanctuaryRequirement, save).met)) save.lastSanctuaryId = 'sonnenwacht'
+    if (save.flags.includes('archiv_geoeffnet') && !save.discoveredClueIds.includes('karte_marea')) save.discoveredClueIds.push('karte_marea')
+  }
+  validateWorldReferences(save)
   return save
+}
+
+function validateWorldReferences(save: GameSave): void {
+  const known = (id: string, entries: { id: string }[], path: string) => {
+    if (!entries.some((entry) => entry.id === id)) throw new DataValidationError(`${path}: unbekannter Eintrag ${id}.`)
+  }
+  known(save.currentAreaId, campaignWorld.areas, 'currentAreaId')
+  if (save.previousAreaId !== null) known(save.previousAreaId, campaignWorld.areas, 'previousAreaId')
+  for (const id of save.visitedAreaIds) known(id, campaignWorld.areas, 'visitedAreaIds')
+  for (const id of save.unlockedPassageIds) known(id, campaignWorld.passages, 'unlockedPassageIds')
+  for (const id of save.defeatedEncounterIds) known(id, campaignWorld.encounters, 'defeatedEncounterIds')
+  for (const id of save.openedChestIds) {
+    if (!campaignWorld.interactions.some((entry) => entry.chestId === id)) throw new DataValidationError(`Unbekannte Truhe: ${id}.`)
+  }
+  for (const id of Object.keys(save.player.inventory)) known(id, campaignWorld.items, 'player.inventory')
+  if (save.player.equippedWeaponId !== null && !campaignWorld.items.some((item) => item.id === save.player.equippedWeaponId && item.kind === 'weapon')) throw new DataValidationError('Die ausgerüstete Waffe ist keine Waffe.')
+  const sanctuary = campaignWorld.areas.find((entry) => entry.id === save.lastSanctuaryId)
+  if (!sanctuary?.safe || !evaluateRequirement(sanctuary.sanctuaryRequirement, save).met) throw new DataValidationError('Der letzte sichere Ort ist kein verfügbarer Rastplatz.')
+  if (save.rngState < 1 || save.rngState >= 2_147_483_647) throw new DataValidationError('rngState liegt ausserhalb des gültigen Bereichs.')
+  for (const [id, state] of Object.entries(save.puzzleStates)) {
+    const puzzle = campaignWorld.puzzles?.find((entry) => entry.id === id)
+    if (!puzzle || state.kind !== 'controls') throw new DataValidationError(`Unbekanntes Rätsel: ${id}.`)
+    const expectedKeys = ['sequence', ...puzzle.controls.map((control) => control.id)]
+    if (Object.keys(state.values).length !== expectedKeys.length || expectedKeys.some((key) => !Object.hasOwn(state.values, key))) throw new DataValidationError(`Rätsel ${id}: unvollständige Stellung.`)
+    for (const control of puzzle.controls) {
+      const choice = requireNonNegativeInteger(state.values[control.id], `puzzleStates.${id}.${control.id}`)
+      if (choice >= control.options.length) throw new DataValidationError(`Rätsel ${id}: ungültige Stellung.`)
+    }
+    const sequence = requireNonNegativeInteger(state.values.sequence, `puzzleStates.${id}.sequence`)
+    if (sequence > (puzzle.sequence?.solution.length ?? 0) || (puzzle.maxOpenControls && puzzle.controls.filter((control) => state.values[control.id] === 1).length > puzzle.maxOpenControls)) throw new DataValidationError(`Rätsel ${id}: ungültiger Fortschritt.`)
+  }
+  const combat = save.activeCombat
+  if (!combat) {
+    if (save.player.life === 0) throw new DataValidationError('Ohne laufenden Kampf muss mindestens ein Lebenspunkt bleiben.')
+    return
+  }
+  const encounter = campaignWorld.encounters.find((entry) => entry.id === combat.encounterId)
+  const enemy = campaignWorld.enemies.find((entry) => entry.id === encounter?.enemyId)
+  const move = enemy?.movesByPhase[combat.phase]?.find((entry) => entry.id === combat.announcedMoveId)
+  if (!encounter || !enemy || !move || encounter.areaId !== save.currentAreaId || save.defeatedEncounterIds.includes(encounter.id)) throw new DataValidationError('Der laufende Kampf passt nicht zu Ort, Gegner oder Phase.')
+  if (combat.enemyMaxLife !== enemy.maxLife || !save.player.equippedWeaponId) throw new DataValidationError('Der laufende Kampf hat ungültige Lebenspunkte oder keine Waffe.')
+  const prepared = save.player.equippedWeaponId === 'morgenklinge'
+  if (combat.entryMode !== (enemy.kind === 'normal' ? 'normal' : prepared ? 'prepared-boss' : 'early-boss') || (combat.entryMode !== 'prepared-boss' && !combat.canFlee)) throw new DataValidationError('Der Kampfmodus passt nicht zur Ausrüstung.')
+  if (new Set(combat.effects.map((effect) => effect.id)).size !== combat.effects.length || combat.effects.some((effect) => !['blitzschutz', 'offener_riss', 'grauschleier'].includes(effect.id) || effect.remainingEnemyTurns > 3)) throw new DataValidationError('Unbekannter oder ungültiger Kampfeffekt.')
+  const expectedStance = combat.effects.some((effect) => effect.id === 'offener_riss') ? 'vulnerable' : move.kind === 'guard' ? 'guarded' : 'normal'
+  if (combat.enemyStance !== expectedStance) throw new DataValidationError('Die Kampfhaltung passt nicht zur angekündigten Bewegung.')
+  if (!enemy.phaseSealItemIds) {
+    const expectedPhase = enemy.phaseTwoAtLife !== undefined && combat.enemyLife <= enemy.phaseTwoAtLife ? 2 : 1
+    if (combat.enemyLife === 0 || combat.phase !== expectedPhase || combat.pendingSealItemId !== null || combat.placedSealItemIds.length || combat.awaitingFinalPromise) throw new DataValidationError('Ungültiger Phasen- oder Siegelfortschritt.')
+    return
+  }
+  const seals = Object.values(enemy.phaseSealItemIds)
+  const expectedPlaced = combat.awaitingFinalPromise ? seals : seals.slice(0, combat.phase - 1)
+  const floor = enemy.phaseThresholds?.[combat.phase + 1] ?? 0
+  const ceiling = combat.phase === 1 ? enemy.maxLife : enemy.phaseThresholds![combat.phase]
+  if (seals.some((id) => (save.player.inventory[id] ?? 0) < 1) || combat.placedSealItemIds.join('|') !== expectedPlaced.join('|') || combat.enemyLife < floor || combat.enemyLife > ceiling || (combat.pendingSealItemId !== null && (combat.pendingSealItemId !== enemy.phaseSealItemIds[combat.phase] || combat.enemyLife !== floor)) || (combat.awaitingFinalPromise && (combat.phase !== 3 || combat.enemyLife !== 0 || combat.pendingSealItemId !== null)) || (!combat.awaitingFinalPromise && combat.enemyLife === floor && combat.pendingSealItemId === null)) throw new DataValidationError('Die Siegel und Lebenspunkte des Finalkampfs passen nicht zusammen.')
 }
 
 export function validateSettings(value: unknown): AppSettings {
@@ -233,6 +369,7 @@ export function parseSaveImport(json: string): GameSave {
     throw new DataValidationError('Die Datei enthält kein gültiges JSON.')
   }
   if (isRecord(parsed) && parsed.format === 'textdungeon-save') {
+    if (parsed.formatVersion !== 1) throw new DataValidationError('Die Exportformat-Version wird nicht unterstützt.')
     return migrateAndValidateGameSave(parsed.adventure)
   }
   return migrateAndValidateGameSave(parsed)

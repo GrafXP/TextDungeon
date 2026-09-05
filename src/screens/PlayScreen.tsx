@@ -1,9 +1,12 @@
 import { useMemo, useRef, useState } from 'react'
 import { useAppState } from '../app/AppState'
 import { InventoryDialog } from '../components/InventoryDialog'
+import { CombatPanel } from '../components/CombatPanel'
+import { PuzzlePanel } from '../components/PuzzlePanel'
 import { phase2World } from '../content/world'
-import { getAvailableActions } from '../engine/actions'
+import { getAvailableActions, isInteractionComplete } from '../engine/actions'
 import { reduceGame } from '../engine/reducer'
+import { evaluateRequirement } from '../engine/requirements'
 import {
   getAreaDescription,
   getCurrentArea,
@@ -28,30 +31,33 @@ export function PlayScreen() {
   }, [game])
 
   if (!game || !view) return null
-  const completed = game.flags.includes(phase2World.sliceGoalFlag)
+  const campaignCompleted = game.flags.includes(phase2World.sliceGoalFlag)
+  const guardiansFreed = ['arbor_befreit', 'marea_befreit', 'voltaro_befreit'].filter((flag) => game.flags.includes(flag)).length
+  const sanctuaryOpen = view.area.safe && evaluateRequirement(view.area.sanctuaryRequirement, game).met
 
   return (
     <main id="main-content" className="screen play-screen">
-      <section className={`atmosphere-panel atmosphere-panel--${view.area.regionId}`} aria-label={`${view.area.name} in ${view.area.regionName}`}>
+      <section className={`atmosphere-panel atmosphere-panel--${view.area.regionId}${game.activeCombat ? ' atmosphere-panel--combat' : ''}`} aria-label={`${view.area.name} in ${view.area.regionName}`}>
         <div className="sun" aria-hidden="true" />
         <div className="hills hills--back" aria-hidden="true" />
         <div className="hills hills--front" aria-hidden="true" />
         <div className="route-lines" aria-hidden="true"><i /><i /><i /></div>
+        <div className="region-landmark" aria-hidden="true"><i /><b /><span /></div>
         <div className="kuno" aria-hidden="true"><span>↗</span></div>
         <div className="atmosphere-info">
           <p>{view.area.regionName}</p>
-          <strong>{view.area.safe ? 'Sicherer Ort' : 'Erkundungsgebiet'}</strong>
+          <strong>{sanctuaryOpen ? 'Sicherer Ort' : 'Erkundungsgebiet'}</strong>
         </div>
       </section>
 
       <article className="reading-card">
         <header className="location-heading">
-          <div>
+          <div className="location-title">
             <p className="eyebrow">{view.area.regionName}</p>
             <h1>{view.area.name}</h1>
           </div>
           <div className="location-tools">
-            {view.area.safe && <span className="safe-badge"><span aria-hidden="true">⌂</span> Sicher</span>}
+            {sanctuaryOpen && <span className="safe-badge"><span aria-hidden="true">⌂</span> Sicher</span>}
             <button ref={inventoryButtonRef} className="inventory-button" onClick={() => setInventoryOpen(true)}>
               <span aria-hidden="true">▦</span> Inventar
             </button>
@@ -67,10 +73,17 @@ export function PlayScreen() {
           </div>
         )}
 
-        {completed && (
+        {campaignCompleted && (
           <section className="phase-note phase-note--success" aria-labelledby="phase-note-title">
-            <h2 id="phase-note-title">Erste Erkundung abgeschlossen</h2>
-            <p>Du hast den Rundweg, die Abkürzung und beide Gegenstandsketten erkundet. Dein Fortschritt bleibt gespeichert.</p>
+            <h2 id="phase-note-title">Taloras Morgen ist zurück</h2>
+            <p>Raugrim ist verbannt. Alle Wege und optionalen Kartenränder bleiben im Nachspiel erreichbar.</p>
+          </section>
+        )}
+
+        {!campaignCompleted && guardiansFreed > 0 && !game.activeCombat && (
+          <section className="phase-note" aria-labelledby="phase-note-title">
+            <h2 id="phase-note-title">{guardiansFreed} von 3 Wächtern befreit</h2>
+            <p>Arbor, Marea und Voltaro können in beliebiger Reihenfolge befreit werden. Danach öffnet sich das Tor der sechs Zeichen.</p>
           </section>
         )}
 
@@ -89,27 +102,41 @@ export function PlayScreen() {
           </ul>
         </section>
 
-        <section className="actions-section" aria-labelledby="actions-title">
-          <h2 id="actions-title">Was möchtest du tun?</h2>
-          <div className="action-grid">
-            {view.actions.map((action) => (
-              <button
-                key={action.id}
-                className={`action-card action-card--${action.kind}`}
-                aria-disabled={action.disabled}
-                onClick={() => {
-                  if (!action.disabled) updateAdventure((current) => reduceGame(current, action.gameAction, phase2World))
-                }}
-              >
-                <span className="action-icon" aria-hidden="true">{action.icon}</span>
-                <strong>{action.label}</strong>
-                <small className={action.disabled ? 'blocked-reason' : undefined}>
-                  {action.disabled ? action.blockedReason : action.description}
-                </small>
-              </button>
-            ))}
-          </div>
-        </section>
+        {!game.activeCombat && phase2World.puzzles?.filter((puzzle) => puzzle.areaId === game.currentAreaId && !isInteractionComplete(phase2World.interactions.find((entry) => entry.id === puzzle.interactionId)!, game)).map((puzzle) => (
+          <PuzzlePanel key={puzzle.id} game={game} puzzle={puzzle} onAction={(action) => updateAdventure((current) => reduceGame(current, action, phase2World))} />
+        ))}
+
+        {game.activeCombat ? (
+          <CombatPanel
+            game={game}
+            world={phase2World}
+            onOpenInventory={() => setInventoryOpen(true)}
+            onAction={(action) => updateAdventure((current) => reduceGame(current, action, phase2World))}
+          />
+        ) : (
+          <section className="actions-section" aria-labelledby="actions-title">
+            <h2 id="actions-title">Was möchtest du tun?</h2>
+            <div className="action-grid">
+              {view.actions.map((action) => (
+                <button
+                  key={action.id}
+                  data-action-id={action.id}
+                  className={`action-card action-card--${action.kind}`}
+                  aria-disabled={action.disabled}
+                  onClick={() => {
+                    if (!action.disabled) updateAdventure((current) => reduceGame(current, action.gameAction, phase2World))
+                  }}
+                >
+                  <span className="action-icon" aria-hidden="true">{action.icon}</span>
+                  <strong>{action.label}</strong>
+                  <small className={action.disabled ? 'blocked-reason' : undefined}>
+                    {action.disabled ? action.blockedReason : action.description}
+                  </small>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         {game.recentEvents.length > 1 && (
           <details className="travel-log">
@@ -126,7 +153,10 @@ export function PlayScreen() {
           world={phase2World}
           returnFocusRef={inventoryButtonRef}
           onClose={() => setInventoryOpen(false)}
-          onAction={(action) => updateAdventure((current) => reduceGame(current, action, phase2World))}
+          onAction={(action) => {
+            updateAdventure((current) => reduceGame(current, action, phase2World))
+            if (action.type === 'USE_ITEM' && game.activeCombat) setInventoryOpen(false)
+          }}
         />
       )}
     </main>

@@ -1,4 +1,5 @@
 import { type RefObject, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { GameSave } from '../domain/game'
 import type { WorldDefinition } from '../domain/content'
 import { getInventoryActions } from '../engine/actions'
@@ -28,9 +29,19 @@ export function InventoryDialog({ game, world, returnFocusRef, onAction, onClose
   const selectedEntry = inventory.find((entry) => entry.item.id === selectedId) ?? inventory[0]
 
   useEffect(() => {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : returnFocusRef.current
+    const previousOverflow = document.body.style.overflow
+    const appRoot = document.getElementById('root')
+    const previousInert = appRoot?.inert ?? false
+    if (appRoot) appRoot.inert = true
+    document.body.style.overflow = 'hidden'
     closeButtonRef.current?.focus()
-    const returnTarget = returnFocusRef.current
-    return () => returnTarget?.focus()
+    return () => {
+      document.body.style.overflow = previousOverflow
+      if (appRoot) appRoot.inert = previousInert
+      if (opener?.isConnected) opener.focus()
+      else returnFocusRef.current?.focus()
+    }
   }, [returnFocusRef])
 
   useEffect(() => {
@@ -61,7 +72,7 @@ export function InventoryDialog({ game, world, returnFocusRef, onAction, onClose
 
   const actions = selectedEntry ? getInventoryActions(game, selectedEntry.item) : []
 
-  return (
+  return createPortal(
     <div className="inventory-overlay" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <section
         ref={panelRef}
@@ -115,6 +126,7 @@ export function InventoryDialog({ game, world, returnFocusRef, onAction, onClose
                 <dl className="item-stats">
                   <div><dt>Heilung</dt><dd>+{selectedEntry.item.healing.lifeRestored} Leben</dd></div>
                   <div><dt>Vorrat</dt><dd>{selectedEntry.quantity}</dd></div>
+                  {selectedEntry.item.healing.extraEffect && <div><dt>Zusatzwirkung</dt><dd>{selectedEntry.item.healing.extraEffect}</dd></div>}
                 </dl>
               )}
 
@@ -137,6 +149,6 @@ export function InventoryDialog({ game, world, returnFocusRef, onAction, onClose
           )}
         </div>
       </section>
-    </div>
+    </div>, document.body
   )
 }

@@ -20,6 +20,10 @@ export function evaluateRequirement(requirement: Requirement | undefined, save: 
       return save.flags.includes(requirement.flag)
         ? { met: true, missing: [] }
         : { met: false, missing: [`Fortschritt:${requirement.flag}`] }
+    case 'clue':
+      return save.discoveredClueIds.includes(requirement.clueId)
+        ? { met: true, missing: [] }
+        : { met: false, missing: [`Hinweis:${requirement.clueId}`] }
     case 'all': {
       const results = requirement.requirements.map((entry) => evaluateRequirement(entry, save))
       return {
@@ -39,6 +43,6 @@ export function evaluateRequirement(requirement: Requirement | undefined, save: 
 export function requirementItemIds(requirement: Requirement | undefined): string[] {
   if (!requirement) return []
   if (requirement.kind === 'item') return [requirement.itemId]
-  if (requirement.kind === 'flag') return []
+  if (requirement.kind === 'flag' || requirement.kind === 'clue') return []
   return requirement.requirements.flatMap(requirementItemIds)
 }
