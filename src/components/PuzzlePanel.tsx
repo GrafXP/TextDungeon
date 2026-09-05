@@ -10,12 +10,15 @@ export function PuzzlePanel({ game, puzzle, onAction }: { game: GameSave; puzzle
     <h2 id={`puzzle-${puzzle.id}`}>{puzzle.title}</h2>
     <details><summary>Hinweis ansehen</summary><p>{puzzle.hint}</p></details>
     <div className="puzzle-controls">
-      {puzzle.controls.map((control) => <label key={control.id}>
-        {control.label}
-        <select value={Number(state.values[control.id])} onChange={(event) => onAction({ type: 'PUZZLE_INPUT', puzzleId: puzzle.id, controlId: control.id, value: Number(event.target.value) })}>
-          {control.options.map((option, index) => <option value={index} key={option}>{option}</option>)}
-        </select>
-      </label>)}
+      {puzzle.controls.map((control) => {
+        const controlId = `puzzle-${puzzle.id}-${control.id}`
+        return <div className="puzzle-control" key={control.id}>
+          <label htmlFor={controlId}>{control.label}</label>
+          <select id={controlId} value={Number(state.values[control.id])} onChange={(event) => onAction({ type: 'PUZZLE_INPUT', puzzleId: puzzle.id, controlId: control.id, value: Number(event.target.value) })}>
+            {control.options.map((option, index) => <option value={index} key={option}>{option}</option>)}
+          </select>
+        </div>
+      })}
     </div>
     {puzzle.sequence && <>
       <p>Folge: {Number(state.values.sequence)} von {puzzle.sequence.solution.length} Zeichen</p>

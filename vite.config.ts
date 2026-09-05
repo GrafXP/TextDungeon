@@ -41,6 +41,9 @@ export default defineConfig({
         ]
       },
       workbox: {
+        // Take control on the first visit; updates still wait for the prompt
+        // because registerType 'prompt' leaves skipWaiting off.
+        clientsClaim: true,
         navigateFallback: '/index.html',
         globPatterns: ['**/*.{js,css,html,svg,woff2}']
       },

@@ -56,7 +56,7 @@
 }
 
 * { box-sizing: border-box; }
-html { min-width: 320px; min-height: 100%; }
+html { min-width: 320px; min-height: 100%; scroll-padding-top: 8rem; }  /* clears the pinned header + nav */
 body { margin: 0; min-width: 320px; min-height: 100vh; background: radial-gradient(circle at 50% 0, #f2f0d9, #dfe8dc 46rem); }
 button, input, select { font: inherit; }
 button, a, input { -webkit-tap-highlight-color: transparent; }
@@ -326,7 +326,8 @@ blockquote { position: relative; margin: 1.2rem 0; padding: .9rem 1.1rem; border
 .puzzle-panel h2 { font-size: 1.35rem; }
 .puzzle-panel details { margin-bottom: 1rem; }
 .puzzle-controls { display: flex; flex-wrap: wrap; gap: .6rem; margin: .8rem 0; }
-.puzzle-controls label { display: flex; flex: 1 1 9rem; flex-direction: column; gap: .4rem; }
+.puzzle-control { display: flex; flex: 1 1 9rem; flex-direction: column; gap: .4rem; }
+.puzzle-control label { font-weight: 700; }
 .puzzle-panel button, .puzzle-panel select { min-height: 48px; padding: .5rem .75rem; border: 1px solid var(--forest); border-radius: 8px; background: var(--paper); color: var(--ink); }
 .puzzle-panel button:disabled { opacity: .55; }
 .seal-progress { margin: .7rem 0; padding: .55rem .75rem; border-radius: 10px; color: var(--forest); background: #f7e8b7; font-weight: 700; }
