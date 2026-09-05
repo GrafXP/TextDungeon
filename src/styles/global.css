@@ -56,7 +56,7 @@
 }
 
 * { box-sizing: border-box; }
-html { min-width: 320px; min-height: 100%; scroll-padding-top: 8rem; }  /* clears the pinned header + nav */
+html { min-width: 320px; min-height: 100%; scroll-padding-top: calc(var(--chrome-height, 120px) + 16px); }
 body { margin: 0; min-width: 320px; min-height: 100vh; background: radial-gradient(circle at 50% 0, #f2f0d9, #dfe8dc 46rem); }
 button, input, select { font: inherit; }
 button, a, input { -webkit-tap-highlight-color: transparent; }
@@ -176,10 +176,10 @@ p { line-height: 1.62; }
 .location-tools { position: relative; z-index: 1; display: flex; flex-shrink: 0; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .5rem; margin-left: auto; max-width: 100%; }
 .inventory-button { display: inline-flex; min-height: 42px; flex-shrink: 0; align-items: center; gap: .4rem; white-space: nowrap; border: 1px solid var(--line); border-radius: 10px; padding: .4rem .7rem; color: var(--forest); background: #fffaf0; cursor: pointer; font-weight: 700; }
 .icon-button { position: relative; z-index: 1; display: inline-flex; flex-shrink: 0; align-items: center; gap: .35rem; border: 1px solid var(--line); border-radius: 10px; padding: .45rem .65rem; background: transparent; cursor: pointer; font-weight: 700; }
-.story-lead { position: relative; font-size: 1.05rem; line-height: 1.7; }
+.story-lead { position: relative; font-size: 1.05rem; line-height: 1.7; white-space: pre-line; }
 .event-result { position: relative; display: flex; align-items: flex-start; gap: .65rem; margin: 1rem 0; padding: .8rem 1rem; border-left: 4px solid var(--water); border-radius: 0 10px 10px 0; background: #e9f4ed; }
 .event-result > span { color: var(--gold); }
-.event-result p { margin: 0; line-height: 1.5; }
+.event-result p { margin: 0; line-height: 1.5; white-space: pre-line; }
 blockquote { position: relative; margin: 1.2rem 0; padding: .9rem 1.1rem; border-left: 4px solid var(--gold); color: #3c5148; background: #f7ecd2; font-family: var(--font-text); line-height: 1.55; }
 .speaker { position: relative; display: flex; gap: .75rem; margin: 1rem 0; }
 .speaker > span { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border-radius: 50%; color: var(--forest); background: var(--gold-bright); }
@@ -363,6 +363,8 @@ blockquote { position: relative; margin: 1.2rem 0; padding: .9rem 1.1rem; border
 .quest-item h2 { margin-bottom: .3rem; font-size: 1.15rem; }
 .quest-item p { margin-bottom: .5rem; color: var(--ink-soft); line-height: 1.45; }
 .hint-details summary { display: inline-flex; min-height: 48px; align-items: center; color: var(--forest); cursor: pointer; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.hint-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.hint-actions .button { max-width: 100%; white-space: normal; }
 .hint-details p { margin: .3rem 0 0; padding: .7rem; border-left: 3px solid var(--gold); background: #f8efd7; }
 
 .settings-screen { padding-bottom: 6rem; }
@@ -419,7 +421,7 @@ blockquote { position: relative; margin: 1.2rem 0; padding: .9rem 1.1rem; border
 .journal-list { display: grid; gap: .55rem; margin: 0; padding: 0; list-style: none; }
 .journal-entry { display: grid; grid-template-columns: 2.6rem minmax(0, 1fr); align-items: start; gap: .8rem; padding: .8rem 1rem; border: 1px solid #dfd2b6; border-radius: 12px; background: var(--paper); }
 .journal-turn { display: grid; min-width: 2.6rem; min-height: 2.6rem; place-items: center; border: 1px solid #cbbd9c; border-radius: 50%; color: var(--forest); background: #f5ecd6; font-size: .85rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-.journal-entry p { margin: 0; padding-top: .35rem; line-height: 1.55; overflow-wrap: break-word; }
+.journal-entry p { margin: 0; padding-top: .35rem; line-height: 1.55; overflow-wrap: break-word; white-space: pre-line; }
 
 @media (max-width: 760px) {
   .play-screen { display: block; }
@@ -461,6 +463,7 @@ blockquote { position: relative; margin: 1.2rem 0; padding: .9rem 1.1rem; border
   .combat-health, .combat-actions { grid-template-columns: 1fr; }
   .segmented-field label span, .segmented-field label:first-of-type span, .segmented-field label:last-of-type span { border-radius: 8px; }
   .location-heading { flex-direction: column; }
+  .location-title { flex: 0 1 auto; width: 100%; }
   .location-heading .icon-button { align-self: flex-start; }
   .location-tools { width: 100%; justify-content: space-between; margin-left: 0; }
   .storage-actions .button { width: 100%; }

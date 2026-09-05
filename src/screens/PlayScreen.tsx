@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAppState } from '../app/AppState'
 import { InventoryDialog } from '../components/InventoryDialog'
 import { CombatPanel } from '../components/CombatPanel'
@@ -18,6 +18,17 @@ export function PlayScreen() {
   const { game, updateAdventure } = useAppState()
   const [inventoryOpen, setInventoryOpen] = useState(false)
   const inventoryButtonRef = useRef<HTMLButtonElement>(null)
+  const resultRef = useRef<HTMLDivElement>(null)
+  const previousGameRef = useRef(game)
+  const showResult = () => {
+    resultRef.current?.focus({ preventScroll: true })
+    resultRef.current?.scrollIntoView({ block: 'start', behavior: 'instant' })
+  }
+  useEffect(() => {
+    const previous = previousGameRef.current
+    previousGameRef.current = game
+    if (previous?.activeCombat && !game?.activeCombat && previous.currentAreaId === game?.currentAreaId) showResult()
+  }, [game])
   const view = useMemo(() => {
     if (!game) return null
     const area = getCurrentArea(game, phase2World)
@@ -64,8 +75,8 @@ export function PlayScreen() {
 
         <p className="story-lead">{view.description}</p>
 
-        {view.lastEvent && (
-          <div className="event-result" role="status" aria-live="polite" aria-atomic="true">
+        {view.lastEvent && !game.activeCombat && (
+          <div ref={resultRef} tabIndex={-1} className="event-result" role="status" aria-live="polite" aria-atomic="true">
             <span aria-hidden="true">✦</span>
             <p>{view.lastEvent}</p>
           </div>
@@ -81,11 +92,11 @@ export function PlayScreen() {
         {!campaignCompleted && guardiansFreed > 0 && !game.activeCombat && (
           <section className="phase-note" aria-labelledby="phase-note-title">
             <h2 id="phase-note-title">{guardiansFreed} von 3 Wächtern befreit</h2>
-            <p>Arbor, Marea und Voltaro können in beliebiger Reihenfolge befreit werden. Danach öffnet sich das Tor der sechs Zeichen.</p>
+            <p>{guardiansFreed === 3 ? 'Alle drei Siegel sind bei dir. Zeige sie mit der Morgenklinge am Tor der sechs Zeichen beim Drei-Wege-Platz.' : 'Befreie die übrigen Wächter mit der Morgenklinge. Die Reihenfolge ist frei.'}</p>
           </section>
         )}
 
-        <section className="carried-items" aria-labelledby="carried-title">
+        {!game.activeCombat && <section className="carried-items" aria-labelledby="carried-title">
           <div>
             <h2 id="carried-title">Dabei</h2>
             <span>{view.inventory.length} Arten</span>
@@ -98,7 +109,7 @@ export function PlayScreen() {
               </li>
             ))}
           </ul>
-        </section>
+        </section>}
 
         {!game.activeCombat && phase2World.puzzles?.filter((puzzle) => puzzle.areaId === game.currentAreaId && !isInteractionComplete(phase2World.interactions.find((entry) => entry.id === puzzle.interactionId)!, game)).map((puzzle) => (
           <PuzzlePanel key={puzzle.id} game={game} puzzle={puzzle} onAction={(action) => updateAdventure((current) => reduceGame(current, action, phase2World))} />
@@ -122,7 +133,10 @@ export function PlayScreen() {
                   className={`action-card action-card--${action.kind}`}
                   aria-disabled={action.disabled}
                   onClick={() => {
-                    if (!action.disabled) updateAdventure((current) => reduceGame(current, action.gameAction, phase2World))
+                    if (!action.disabled) {
+                      updateAdventure((current) => reduceGame(current, action.gameAction, phase2World))
+                      if (action.kind === 'inspect' || action.kind === 'interaction') requestAnimationFrame(showResult)
+                    }
                   }}
                 >
                   <span className="action-icon" aria-hidden="true">{action.icon}</span>

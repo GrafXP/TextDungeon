@@ -28,12 +28,12 @@ Die technische und inhaltliche Umsetzung von Phase 1 bis Phase 5 des [`PRODUCT_P
 - getrennte, versionierte IndexedDB-Speicherung für Abenteuer und Einstellungen;
 - geordnete automatische Schreibvorgänge, Laufzeitvalidierung und Migration;
 - geprüfter JSON-Export/-Import, explizite Importbestätigung und sicherer Reset;
-- Textgrösse, hoher Kontrast, reduzierte Bewegung und Toneinstellung;
+- Textgrösse, hoher Kontrast und reduzierte Bewegung;
 - Starten und Fortsetzen eines lokalen Abenteuers;
 - reine Reducer-Spiellogik für Reisen, Untersuchen, Truhen, Funde und Anforderungen;
 - alle 41 Orte und 55 Verbindungen der Erzählbibel, davon 35 ohne Questfortschritt erreichbar;
 - sechs regionale Rundwege und Abkürzungen mit sichtbaren, datengetriebenen Sperrgründen;
-- Aufgabenansicht mit freiwilligen Hinweisen und entdeckungsbasierte SVG-Karte;
+- Aufgabenansicht mit drei gespeicherten Hinweisstufen, gezielten Kartenhinweisen und entdeckungsbasierter SVG-Karte;
 - Weltvalidator für IDs, Ziele, Anforderungen, Sackgassen und Lösbarkeit;
 - responsives Inventar mit Gegenstandsdetails, Fokusführung und erlaubten Aktionen;
 - sechs Waffen mit unterschiedlichen Schadenswerten, Panzerungs- und Regionsboni;
@@ -50,3 +50,5 @@ Die technische und inhaltliche Umsetzung von Phase 1 bis Phase 5 des [`PRODUCT_P
 - regionsbezogene Kartenflächen, lokale CSS-Illustrationen und automatische Balance-Simulationen.
 
 Der Ablauf für die ausstehende Beobachtung mit Kindern steht in [`PLAYTEST_GUIDE.md`](./PLAYTEST_GUIDE.md).
+
+Die Ergebnisse der Geschichte- und Funktionsprüfung mit den umgesetzten Korrekturen stehen in [`REVIEW.md`](./REVIEW.md).

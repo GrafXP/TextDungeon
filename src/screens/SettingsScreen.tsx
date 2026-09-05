@@ -39,6 +39,8 @@ export function SettingsScreen() {
     setImportError(null)
     setPendingImport(null)
     const file = event.target.files?.[0]
+    // A cancelled or rejected file must be selectable again, even at the same path.
+    event.target.value = ''
     if (!file) return
     if (file.size > 2_000_000) {
       setImportError('Die Datei ist zu gross. Ein TextDungeon-Spielstand ist kleiner als 2 MB.')
@@ -106,14 +108,10 @@ export function SettingsScreen() {
       </section>
 
       <section className="settings-card" aria-labelledby="comfort-settings">
-        <div className="setting-intro"><span aria-hidden="true">◌</span><div><h2 id="comfort-settings">Ruhe und Ton</h2><p>Keine wichtige Information wird nur durch Ton oder Bewegung gezeigt.</p></div></div>
+        <div className="setting-intro"><span aria-hidden="true">◌</span><div><h2 id="comfort-settings">Ruhe</h2><p>Alle Klangrätsel zeigen ihre Folge auch als sichtbare Symbole.</p></div></div>
         <label className="switch-row">
           <span><strong>Bewegung reduzieren</strong><small>Schaltet dekorative Animationen aus</small></span>
           <input type="checkbox" role="switch" checked={settings.reducedMotion} onChange={(event) => updateSettings({ reducedMotion: event.target.checked })} />
-        </label>
-        <label className="switch-row">
-          <span><strong>Ton</strong><small>Das Spiel bleibt auch ohne Ton vollständig verständlich</small></span>
-          <input type="checkbox" role="switch" checked={settings.soundEnabled} onChange={(event) => updateSettings({ soundEnabled: event.target.checked })} />
         </label>
       </section>
 

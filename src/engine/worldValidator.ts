@@ -112,6 +112,7 @@ function simulateProgression(world: WorldDefinition) {
     for (const interaction of world.interactions) {
       if (completedInteractions.has(interaction.id) || !reachable.has(interaction.areaId)) continue
       if (!requirementMet(interaction.requirement, items, flags)) continue
+      if (!requirementMet(interaction.visibilityRequirement, items, flags)) continue
       completedInteractions.add(interaction.id)
       for (const effect of interaction.effects) {
         if (effect.kind === 'discoverClue' && !flags.has(`clue:${effect.clueId}`)) {
@@ -196,8 +197,11 @@ export function validateWorld(world: WorldDefinition): ValidationReport {
   }
   for (const area of world.areas) {
     validateRequirement(area.sanctuaryRequirement, itemIds, `Rastplatz ${area.id}`, errors)
+    for (const variant of area.variants ?? []) validateRequirement(variant.requirement, itemIds, `Ortstext ${area.id}`, errors)
     if (area.sanctuaryRequirement && !area.safe) errors.push(`Ort ${area.id} hat eine Rastplatz-Anforderung, ist aber nicht als sicher markiert.`)
   }
+  for (const duplicate of duplicateIds((world.storyBeats ?? []).map((beat) => beat.id))) errors.push(`Doppelte Erzähl-ID: ${duplicate}.`)
+  for (const beat of world.storyBeats ?? []) validateRequirement(beat.requirement, itemIds, `Erzählung ${beat.id}`, errors)
   for (const passage of world.passages) {
     if (!areaIds.has(passage.fromAreaId)) errors.push(`${passage.id} beginnt an einem unbekannten Ort: ${passage.fromAreaId}.`)
     if (!areaIds.has(passage.toAreaId)) errors.push(`${passage.id} endet an einem unbekannten Ort: ${passage.toAreaId}.`)
@@ -212,6 +216,7 @@ export function validateWorld(world: WorldDefinition): ValidationReport {
     if (!areaIds.has(interaction.areaId)) errors.push(`${interaction.id} liegt an einem unbekannten Ort: ${interaction.areaId}.`)
     if (interaction.actionType === 'OPEN_CHEST' && !interaction.chestId) errors.push(`${interaction.id} ist eine Truhe ohne Truhen-ID.`)
     validateRequirement(interaction.requirement, itemIds, `Interaktion ${interaction.id}`, errors)
+    validateRequirement(interaction.visibilityRequirement, itemIds, `Sichtbarkeit ${interaction.id}`, errors)
     const requiredItems = new Set(requirementItemIds(interaction.requirement))
     validateEffects(interaction.effects, `Interaktion ${interaction.id}`, itemIds, passageIds, errors)
     for (const effect of interaction.effects) {

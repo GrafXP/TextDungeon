@@ -5,6 +5,8 @@ import { isInteractionComplete, otherEnd, type GameAction } from './actions'
 import { attack, defend, flee, placeSeal, respawn, speakPromise, startCombat, useCombatItem, type CombatTransition } from './combat'
 import { applyEffect } from './effects'
 import { getPuzzleState, isPuzzleSolved } from './puzzles'
+import { getAreaInspectText, getQuestViews } from './selectors'
+import { getHintLevel, getHintTexts, hintId } from './hints'
 
 function unique<T>(values: T[]): T[] {
   return [...new Set(values)]
@@ -26,6 +28,32 @@ function finishCombatTransition(save: GameSave, transition: CombatTransition | n
 }
 
 export function reduceGame(save: GameSave, action: GameAction, world: WorldDefinition): GameSave {
+  const next = transitionGame(save, action, world)
+  if (next === save || next.activeCombat) return next
+  const beats = world.storyBeats?.filter((beat) => !next.deliveredDialogueIds.includes(beat.id) && evaluateRequirement(beat.requirement, next).met) ?? []
+  const event = next.recentEvents.at(-1)
+  if (!beats.length || !event) return next
+  const narrated = { ...event, text: [event.text, ...beats.map((beat) => beat.text)].join('\n\n') }
+  return {
+    ...next,
+    deliveredDialogueIds: unique([...next.deliveredDialogueIds, ...beats.map((beat) => beat.id)]),
+    recentEvents: [...next.recentEvents.slice(0, -1), narrated],
+    journal: [...next.journal.slice(0, -1), narrated]
+  }
+}
+
+function transitionGame(save: GameSave, action: GameAction, world: WorldDefinition): GameSave {
+  // Reading help never advances the enemy, even during a fight or rescue pause.
+  if (action.type === 'SHOW_HINT') {
+    const quest = getQuestViews(save).find((entry) => entry.id === action.questId && !entry.done)
+    if (!quest || !Number.isInteger(action.level) || action.level < 1 || action.level > 3 || action.level !== getHintLevel(save, quest) + 1) return save
+    const id = hintId(quest, action.level)
+    return withEvent({
+      ...save,
+      deliveredDialogueIds: unique([...save.deliveredDialogueIds, id]),
+      discoveredClueIds: action.level === 3 ? unique([...save.discoveredClueIds, ...(quest.hintAreaIds ?? []).filter((areaId) => world.areas.some((area) => area.id === areaId)).map((areaId) => `hinweis_ort:${areaId}`)]) : save.discoveredClueIds
+    }, `Kunos Hinweis ${action.level} zu «${quest.title}»: ${getHintTexts(quest)[action.level - 1]}`, id)
+  }
   if (save.player.life === 0) {
     return action.type === 'RESPAWN' ? finishCombatTransition(save, respawn(save, world)) : save
   }
@@ -125,7 +153,7 @@ export function reduceGame(save: GameSave, action: GameAction, world: WorldDefin
       flags: unique([...save.flags, `area_untersucht:${area.id}`]),
       discoveredClueIds: unique([...save.discoveredClueIds, `ort:${area.id}`])
     }
-    return withEvent(inspected, area.inspectText, `inspect:${area.id}`)
+    return withEvent(inspected, getAreaInspectText(save, area), `inspect:${area.id}`)
   }
 
   if (action.type === 'USE_ITEM') {
@@ -169,6 +197,7 @@ export function reduceGame(save: GameSave, action: GameAction, world: WorldDefin
   const interaction = world.interactions.find((entry) => entry.id === action.interactionId)
   if (!interaction || interaction.areaId !== save.currentAreaId) return save
   if (interaction.actionType !== action.type || isInteractionComplete(interaction, save)) return save
+  if (!evaluateRequirement(interaction.visibilityRequirement, save).met) return save
   if (!evaluateRequirement(interaction.requirement, save).met) return save
   const puzzle = world.puzzles?.find((entry) => entry.interactionId === interaction.id)
   if (puzzle && !isPuzzleSolved(save, puzzle)) return save

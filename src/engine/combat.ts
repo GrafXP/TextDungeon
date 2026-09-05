@@ -2,6 +2,7 @@ import type { EncounterDefinition, EnemyDefinition, EnemyMoveDefinition, WorldDe
 import type { CombatState, GameSave } from '../domain/game'
 import { applyEffect } from './effects'
 import { evaluateRequirement } from './requirements'
+import { otherEnd } from './actions'
 
 export interface CombatView {
   encounter: EncounterDefinition
@@ -62,6 +63,8 @@ function stanceFor(move: EnemyMoveDefinition, effects: CombatState['effects']): 
 
 export function startCombat(save: GameSave, encounterId: string, world: WorldDefinition): CombatTransition | null {
   if (save.activeCombat || save.player.life === 0 || save.defeatedEncounterIds.includes(encounterId)) return null
+  const weapon = world.items.find((item) => item.id === save.player.equippedWeaponId)
+  if (!weapon?.weapon || (save.player.inventory[weapon.id] ?? 0) < 1) return null
   const encounter = world.encounters.find((entry) => entry.id === encounterId && entry.areaId === save.currentAreaId)
   const enemy = encounter ? world.enemies.find((entry) => entry.id === encounter.enemyId) : undefined
   const move = enemy ? initialMove(enemy) : undefined
@@ -336,7 +339,11 @@ export function flee(save: GameSave, world: WorldDefinition): CombatTransition |
   const view = getCombatView(save, world)
   const combat = save.activeCombat
   if (!view || !combat?.canFlee || save.player.life === 0) return null
-  const destination = world.areas.find((entry) => entry.id === view.encounter.fleeAreaId)
+  const returnPassage = world.passages.find((passage) => otherEnd(passage, save.currentAreaId) === save.previousAreaId &&
+    (evaluateRequirement(passage.requirement, save).met || save.unlockedPassageIds.includes(passage.id)))
+  const destinationId = returnPassage && save.previousAreaId && save.visitedAreaIds.includes(save.previousAreaId)
+    ? save.previousAreaId : view.encounter.fleeAreaId
+  const destination = world.areas.find((entry) => entry.id === destinationId)
   if (!destination) return null
   return {
     save: {
@@ -344,6 +351,7 @@ export function flee(save: GameSave, world: WorldDefinition): CombatTransition |
       currentAreaId: destination.id,
       previousAreaId: save.currentAreaId,
       visitedAreaIds: [...new Set([...save.visitedAreaIds, destination.id])],
+      deliveredDialogueIds: [...new Set([...save.deliveredDialogueIds, `area_intro:${save.currentAreaId}`])],
       lastSanctuaryId: destination.safe && evaluateRequirement(destination.sanctuaryRequirement, save).met ? destination.id : save.lastSanctuaryId,
       activeCombat: null
     },
@@ -364,6 +372,7 @@ export function respawn(save: GameSave, world: WorldDefinition): CombatTransitio
       currentAreaId: sanctuary.id,
       previousAreaId: save.currentAreaId,
       visitedAreaIds: [...new Set([...save.visitedAreaIds, sanctuary.id])],
+      deliveredDialogueIds: [...new Set([...save.deliveredDialogueIds, `area_intro:${save.currentAreaId}`])],
       player: {
         ...save.player,
         life: save.player.maxLife,

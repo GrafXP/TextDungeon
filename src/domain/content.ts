@@ -24,6 +24,8 @@ export interface AreaDefinition {
   firstDescription: string
   revisitDescription: string
   inspectText: string
+  /** First matching state takes precedence, including on a first visit. */
+  variants?: { requirement: Requirement; description: string; inspectText?: string }[]
 }
 
 export interface PassageDefinition {
@@ -82,6 +84,7 @@ export interface InteractionDefinition {
   description: string
   resultText: string
   requirement?: Requirement
+  visibilityRequirement?: Requirement
   blockedText?: string
   effects: InteractionEffect[]
   chestId?: ChestId
@@ -129,6 +132,7 @@ export interface EncounterDefinition {
 }
 
 export interface WorldDefinition {
+  storyBeats?: { id: string; requirement: Requirement; text: string }[]
   puzzles?: PuzzleDefinition[]
   areas: AreaDefinition[]
   passages: PassageDefinition[]

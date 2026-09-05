@@ -4,6 +4,7 @@ import { evaluateRequirement } from './requirements'
 import { isPuzzleSolved } from './puzzles'
 
 export type GameAction =
+  | { type: 'SHOW_HINT'; questId: string; level: number }
   | { type: 'PUZZLE_INPUT'; puzzleId: string; controlId: string; value: number }
   | { type: 'PUZZLE_RESET'; puzzleId: string }
   | { type: 'MOVE'; passageId: string; toAreaId: string }
@@ -94,6 +95,7 @@ export function getAvailableActions(save: GameSave, world: WorldDefinition): Ava
   }
 
   for (const interaction of world.interactions.filter((entry) => entry.areaId === area.id)) {
+    if (!evaluateRequirement(interaction.visibilityRequirement, save).met) continue
     if (isInteractionComplete(interaction, save)) continue
     const requirement = evaluateRequirement(interaction.requirement, save)
     const puzzle = world.puzzles?.find((entry) => entry.interactionId === interaction.id)
@@ -134,14 +136,16 @@ export function getAvailableActions(save: GameSave, world: WorldDefinition): Ava
     if (save.defeatedEncounterIds.includes(encounter.id)) continue
     const enemy = world.enemies.find((entry) => entry.id === encounter.enemyId)
     const missingSeals = Boolean(enemy?.phaseSealItemIds && Object.values(enemy.phaseSealItemIds).some((id) => (save.player.inventory[id] ?? 0) < 1))
+    const weapon = world.items.find((item) => item.id === save.player.equippedWeaponId && item.weapon)
+    const missingWeapon = !weapon || (save.player.inventory[weapon.id] ?? 0) < 1
     actions.push({
       id: `combat:${encounter.id}`,
       kind: 'combat',
       label: encounter.label,
       description: encounter.description,
       icon: '⚔',
-      disabled: missingSeals,
-      blockedReason: missingSeals ? 'Für die Verbannung brauchst du alle drei Wächtersiegel.' : undefined,
+      disabled: missingSeals || missingWeapon,
+      blockedReason: missingWeapon ? 'Rüste zuerst im Inventar eine Waffe aus.' : missingSeals ? 'Für die Verbannung brauchst du alle drei Wächtersiegel.' : undefined,
       gameAction: { type: 'START_COMBAT', encounterId: encounter.id }
     })
   }

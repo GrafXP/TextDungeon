@@ -12,7 +12,8 @@ export function TitleScreen() {
 
   const handleStart = async (event: FormEvent) => {
     event.preventDefault()
-    if (!name.trim()) return
+    if (starting || !name.trim()) return
+    setShowNewGame(false)
     setStarting(true)
     const saved = await startAdventure(name)
     setStarting(false)

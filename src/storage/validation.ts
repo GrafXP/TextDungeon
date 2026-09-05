@@ -320,6 +320,8 @@ function validateWorldReferences(save: GameSave): void {
   if (combat.enemyMaxLife !== enemy.maxLife || !save.player.equippedWeaponId) throw new DataValidationError('Der laufende Kampf hat ungültige Lebenspunkte oder keine Waffe.')
   const prepared = save.player.equippedWeaponId === 'morgenklinge'
   if (combat.entryMode !== (enemy.kind === 'normal' ? 'normal' : prepared ? 'prepared-boss' : 'early-boss') || (combat.entryMode !== 'prepared-boss' && !combat.canFlee)) throw new DataValidationError('Der Kampfmodus passt nicht zur Ausrüstung.')
+  if (combat.entryMode === 'prepared-boss' && combat.canFlee !== (combat.enemyLife === combat.enemyMaxLife)) throw new DataValidationError('Der Rückweg passt nicht zum bisherigen Bosskampf.')
+  if (combat.entryMode === 'early-boss' && combat.enemyLife !== combat.enemyMaxLife) throw new DataValidationError('Ohne Morgenklinge kann der Schattenpanzer keinen Schaden nehmen.')
   if (new Set(combat.effects.map((effect) => effect.id)).size !== combat.effects.length || combat.effects.some((effect) => !['blitzschutz', 'offener_riss', 'grauschleier'].includes(effect.id) || effect.remainingEnemyTurns > 3)) throw new DataValidationError('Unbekannter oder ungültiger Kampfeffekt.')
   const expectedStance = combat.effects.some((effect) => effect.id === 'offener_riss') ? 'vulnerable' : move.kind === 'guard' ? 'guarded' : 'normal'
   if (combat.enemyStance !== expectedStance) throw new DataValidationError('Die Kampfhaltung passt nicht zur angekündigten Bewegung.')

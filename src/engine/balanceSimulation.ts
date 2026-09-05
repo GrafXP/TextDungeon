@@ -52,9 +52,11 @@ export function simulateCampaignBalance(world: WorldDefinition, seed = 1): Balan
       }
       const view = getCombatView(save, world)
       if (!view) break
-      if (save.player.life <= 6 && (save.player.inventory.apfelbrot ?? 0) > 0) {
+      if (view.move.kind === 'heavy') {
+        save = reduceGame(save, { type: 'DEFEND' }, world)
+      } else if (save.player.life <= 8 && (save.player.inventory.apfelbrot ?? 0) > 0) {
         save = reduceGame(save, { type: 'USE_ITEM', itemId: 'apfelbrot' }, world)
-      } else if (view.move.kind === 'heavy') {
+      } else if (combat.enemyStance === 'guarded' || (view.enemy.airborne && combat.enemyStance !== 'vulnerable')) {
         save = reduceGame(save, { type: 'DEFEND' }, world)
       } else {
         save = reduceGame(save, { type: 'ATTACK' }, world)

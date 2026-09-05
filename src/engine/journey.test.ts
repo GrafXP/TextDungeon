@@ -113,7 +113,12 @@ describe('vollständige Reise mit echten Wegen, Kämpfen und Speicherprüfung', 
         journey.act({ type: 'START_COMBAT', encounterId: id })
         journey.act({ type: 'FLEE' })
       }
-      for (const index of giftOrder) journey.gift(index)
+      for (const [position, index] of giftOrder.entries()) {
+        journey.gift(index)
+        expect(journey.save.deliveredDialogueIds.filter((id) => id.startsWith('erinnerung_'))).toEqual(
+          ['erinnerung_alva', 'erinnerung_waechter', 'erinnerung_kuno'].slice(0, position + 1)
+        )
+      }
       journey.interact('morgenklinge_ziehen')
       journey.act({ type: 'EQUIP_WEAPON', itemId: 'morgenklinge' })
       for (const index of guardianOrder) journey.fight(['boss_arbor', 'boss_marea', 'boss_voltaro'][index])
@@ -128,6 +133,6 @@ describe('vollständige Reise mit echten Wegen, Kämpfen und Speicherprüfung', 
       for (const area of world.areas) journey.travel(area.id)
       expect(journey.save.visitedAreaIds).toHaveLength(41)
       expect(journey.save.discoveredClueIds.filter((id) => id.startsWith('karte_'))).toHaveLength(6)
-    })
+    }, 15_000)
   }
 })

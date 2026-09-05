@@ -83,7 +83,7 @@ function newRunId(): string {
 
 export function createNewGame(playerName: string): GameSave {
   const name = playerName.trim() || 'Abenteurerin'
-  const firstEvent: GameEvent = { id: 'adventure-started', text: `${name}, dein Abenteuer beginnt.`, turn: 0 }
+  const firstEvent: GameEvent = { id: 'adventure-started', text: `${name}, Tessa gibt dir ein Reiseschwert, eine Laterne und drei Apfelbrote. «Die Wachen schützen die Menschen hier. Du kennst unsere Karten und kannst Kuno hören. Schau mit ihm im Tempel am Drei-Wege-Platz nach. Wenn eine Gefahr zu gross ist, kehrst du zu mir zurück.»`, turn: 0 }
 
   return {
     schemaVersion: SAVE_SCHEMA_VERSION,

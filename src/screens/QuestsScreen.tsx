@@ -1,9 +1,12 @@
 import { useAppState } from '../app/AppState'
 import { getMainGoal, getQuestViews } from '../engine/selectors'
 import { cardNotes } from '../content/world/campaignExtras'
+import { QuestHints } from '../components/QuestHints'
+import { campaignWorld } from '../content/world/campaignWorld'
+import { reduceGame } from '../engine/reducer'
 
 export function QuestsScreen() {
-  const { game } = useAppState()
+  const { game, updateAdventure } = useAppState()
   if (!game) return null
   const quests = getQuestViews(game)
   const mainGoal = getMainGoal(game)
@@ -34,10 +37,7 @@ export function QuestsScreen() {
               <h2>{quest.title}</h2>
               <p>{quest.description}</p>
               {!quest.done && (
-                <details className="hint-details">
-                  <summary>Kunos Hinweis öffnen</summary>
-                  <p><strong>Kuno:</strong> «{quest.hint}»</p>
-                </details>
+                <QuestHints game={game} quest={quest} onAction={(action) => updateAdventure((current) => reduceGame(current, action, campaignWorld))} />
               )}
             </div>
           </li>

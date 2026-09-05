@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAppState } from '../app/AppState'
 import { phase2World } from '../content/world'
 
@@ -9,8 +9,16 @@ function navClass({ isActive }: { isActive: boolean }) {
 
 export function AppLayout() {
   const { adventureStatus, game, saveStatus } = useAppState()
+  const { pathname } = useLocation()
   const chromeRef = useRef<HTMLDivElement>(null)
   const hasAdventure = adventureStatus === 'ready' && game
+  useLayoutEffect(() => {
+    const heading = document.querySelector<HTMLElement>('#main-content h1')
+    if (!heading) return
+    heading.tabIndex = -1
+    heading.focus({ preventScroll: true })
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }, [pathname, game?.currentAreaId])
   const weaponName = game?.player.equippedWeaponId
     ? phase2World.items.find((item) => item.id === game.player.equippedWeaponId)?.name ?? 'Unbekannt'
     : 'Keine Waffe'

@@ -4,6 +4,7 @@ import type { GameSave } from '../domain/game'
 import type { WorldDefinition } from '../domain/content'
 import { getInventoryActions } from '../engine/actions'
 import { getInventoryItems } from '../engine/selectors'
+import { getCombatView } from '../engine/combat'
 
 interface InventoryDialogProps {
   game: GameSave
@@ -71,6 +72,7 @@ export function InventoryDialog({ game, world, returnFocusRef, onAction, onClose
   }
 
   const actions = selectedEntry ? getInventoryActions(game, selectedEntry.item) : []
+  const combatView = getCombatView(game, world)
 
   return createPortal(
     <div className="inventory-overlay" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
@@ -131,6 +133,12 @@ export function InventoryDialog({ game, world, returnFocusRef, onAction, onClose
               )}
 
               <div className="item-actions">
+                {combatView && selectedEntry.item.healing && !game.activeCombat?.pendingSealItemId && !game.activeCombat?.awaitingFinalPromise && (
+                  <p className="action-reason">
+                    Benutzen kostet einen Kampfzug. Danach folgt «{combatView.move.name}».
+                    {combatView.move.kind === 'heavy' && ' Ein schwerer Angriff steht bevor. Verteidige dich zuerst und heile bei einer ruhigeren Bewegung.'}
+                  </p>
+                )}
                 {actions.map((action) => (
                   <div key={action.id}>
                     <button

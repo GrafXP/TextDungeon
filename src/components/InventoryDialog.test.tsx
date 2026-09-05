@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { phase2World } from '../content/world'
 import { createNewGame } from '../domain/game'
 import type { GameAction } from '../engine/actions'
+import { reduceGame } from '../engine/reducer'
 import { InventoryDialog } from './InventoryDialog'
 
 function InventoryHarness({ onAction = () => undefined }: { onAction?: (action: GameAction) => void }) {
@@ -29,6 +30,18 @@ function InventoryHarness({ onAction = () => undefined }: { onAction?: (action: 
 }
 
 describe('Inventardialog', () => {
+  it('erklärt vor dem Heilen den Kampfzug und den angekündigten schweren Angriff', async () => {
+    const user = userEvent.setup()
+    const initial = createNewGame('Mira')
+    initial.currentAreaId = 'perlenbecken'
+    initial.visitedAreaIds.push('perlenbecken')
+    const game = reduceGame(initial, { type: 'START_COMBAT', encounterId: 'boss_marea' }, phase2World)
+    render(<InventoryDialog game={game} world={phase2World} returnFocusRef={{ current: null }} onAction={vi.fn()} onClose={vi.fn()} />)
+    await user.click(screen.getByRole('button', { name: /Apfelbrot/ }))
+    expect(screen.getByText(/Benutzen kostet einen Kampfzug/)).toHaveTextContent('Wellenrolle')
+    expect(screen.getByText(/Verteidige dich zuerst/)).toBeInTheDocument()
+    expect(game.activeCombat?.round).toBe(1)
+  })
   it('zeigt Gegenstandsdetails und die unterschiedlichen Waffenwerte', async () => {
     const user = userEvent.setup()
     const game = createNewGame('Mira')

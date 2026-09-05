@@ -1,8 +1,49 @@
 import { expect, test, type Page } from '@playwright/test'
+import { createNewGame } from '../../src/domain/game'
 
 async function clickAction(page: Page, name: string | RegExp) {
   await page.getByRole('button', { name }).click()
 }
+
+test('gibt Hinweise stufenweise und zeigt nur den ausdrücklich erfragten Ort auf der Karte', async ({ page }) => {
+  await page.goto('/')
+  await page.getByLabel('Wie heisst du?').fill('Mira')
+  await clickAction(page, 'Abenteuer starten')
+  await page.getByRole('link', { name: 'Aufgaben', exact: true }).click()
+  const windQuest = page.locator('.quest-item').filter({ has: page.getByRole('heading', { name: 'Bringe die Windorgel zum Klingen' }) })
+  await windQuest.getByText('Kunos Hinweis öffnen', { exact: true }).click()
+  await expect(windQuest).toContainText('Hinweis 1:')
+  await expect(windQuest).not.toContainText('Das sichtbare Echo')
+  await windQuest.getByRole('button', { name: 'Genauerer Hinweis' }).click()
+  await expect(windQuest.getByRole('link')).toHaveCount(0)
+  await windQuest.getByRole('button', { name: 'Lösung und Ort zeigen' }).click()
+  await expect(windQuest).toContainText('Das sichtbare Echo')
+  await windQuest.getByRole('link', { name: 'Hinweis auf der Karte ansehen' }).click()
+  await expect(page.locator('.map-hint')).toContainText('Kristallmine')
+  await expect(page.locator('.map-text-list')).toContainText('Bekannt durch Kunos Hinweis')
+  await expect(page.locator('.map-text-list')).not.toContainText('Lorenwerk')
+  await page.locator('.map-viewport').scrollIntoViewIfNeeded()
+  await expect(page.locator('.map-node').filter({ hasText: 'Kristallmine' })).toBeInViewport()
+  await page.reload()
+  await expect(page.locator('.map-hint')).toContainText('Kristallmine')
+  await page.getByRole('link', { name: 'Aufgaben', exact: true }).click()
+  await expect(windQuest.getByText('Kunos Hinweis öffnen (3 von 3)', { exact: true })).toBeVisible()
+})
+
+test('kann dieselbe Importdatei nach Abbrechen erneut auswählen und bestätigen', async ({ page }) => {
+  await page.goto('/einstellungen')
+  const file = { name: 'abenteuer.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(createNewGame('Importkind'))) }
+  const input = page.getByLabel('Spielstand importieren', { exact: true })
+  await input.setInputFiles(file)
+  await expect(page.getByRole('alertdialog')).toContainText('Importkind')
+  await page.getByRole('button', { name: 'Abbrechen', exact: true }).click()
+  await expect(input).toHaveValue('')
+  await input.setInputFiles(file)
+  await page.getByRole('button', { name: 'Import bestätigen' }).click()
+  await expect(page.getByRole('heading', { name: 'Sonnenwacht', exact: true })).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Sonnenwacht', exact: true })).toBeVisible()
+})
 
 test('startet, erkundet, lädt neu und zeigt dieselben Kartendaten', async ({ page }) => {
   await page.goto('/')
@@ -11,7 +52,11 @@ test('startet, erkundet, lädt neu und zeigt dieselben Kartendaten', async ({ pa
 
   await expect(page.getByRole('heading', { name: 'Sonnenwacht' })).toBeVisible()
   await page.getByRole('button', { name: /Gehe zum Alten Markt/ }).click()
+  await expect(page.getByRole('heading', { name: 'Alter Markt' })).toBeFocused()
+  await expect(page.getByRole('heading', { name: 'Alter Markt' })).toBeInViewport()
   await page.getByRole('button', { name: /Nimm die Hebelstange/ }).click()
+  await expect(page.locator('.event-result')).toBeFocused()
+  await expect(page.locator('.event-result')).toBeInViewport()
   await expect(page.getByRole('listitem').filter({ hasText: 'Hebelstange' })).toBeVisible()
 
   await page.reload()
@@ -27,6 +72,33 @@ test('enthält keine Vorlesefunktion mehr', async ({ page }) => {
   await page.goto('/einstellungen')
   await expect(page.getByRole('heading', { name: 'Einstellungen' })).toBeVisible()
   await expect(page.getByText(/vorlesen/i)).toHaveCount(0)
+})
+
+test('hält bei 320 Pixeln und sehr grosser Schrift Ort und Bedienelemente erreichbar', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 })
+  await page.goto('/einstellungen')
+  await page.getByText('Sehr gross', { exact: true }).click()
+  await expect(page.getByRole('switch', { name: /^Ton/ })).toHaveCount(0)
+  await page.getByRole('link', { name: 'TextDungeon – Startseite' }).click()
+  await page.getByLabel('Wie heisst du?').fill('Mira')
+  await clickAction(page, 'Abenteuer starten')
+  const title = page.getByRole('heading', { name: 'Sonnenwacht', exact: true })
+  await expect(title).toBeInViewport()
+  // Measure in one layout snapshot: the offline-ready notice may appear between
+  // two separate browser calls and move both elements down together.
+  const titleGap = await page.evaluate(() => {
+    const titleBox = document.querySelector('.location-title')!.getBoundingClientRect()
+    const toolsBox = document.querySelector('.location-tools')!.getBoundingClientRect()
+    return toolsBox.top - titleBox.bottom
+  })
+  expect(titleGap).toBeLessThan(40)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
+  await clickAction(page, /Gehe zum Alten Markt/)
+  await expect(page.getByRole('heading', { name: 'Alter Markt', exact: true })).toBeInViewport()
+  await clickAction(page, 'Inventar')
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('button', { name: 'Inventar', exact: true })).toBeFocused()
 })
 
 test('findet den Hafenspeer, zeigt seine Werte und rüstet ihn aus', async ({ page }) => {

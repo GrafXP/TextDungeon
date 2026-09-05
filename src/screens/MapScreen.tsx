@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAppState } from '../app/AppState'
 import { phase2World } from '../content/world'
 import { evaluateRequirement } from '../engine/requirements'
@@ -12,6 +13,10 @@ const MAP_VIEW_BOX = { x: 20, y: 45, width: 960, height: 730 }
 
 export function MapScreen() {
   const { game } = useAppState()
+  const [searchParams] = useSearchParams()
+  const requestedHint = searchParams.get('hinweis')
+  const hintArea = game && game.discoveredClueIds.includes(`hinweis_ort:${requestedHint}`)
+    ? phase2World.areas.find((area) => area.id === requestedHint) : undefined
   const [zoom, setZoom] = useState(DEFAULT_ZOOM)
   const viewportRef = useRef<HTMLDivElement>(null)
 
@@ -36,12 +41,12 @@ export function MapScreen() {
   // The starting zoom only shows a section, so open the map centred on the current area.
   useEffect(() => {
     const viewport = viewportRef.current
-    const area = phase2World.areas.find((entry) => entry.id === game?.currentAreaId)
+    const area = hintArea ?? phase2World.areas.find((entry) => entry.id === game?.currentAreaId)
     if (!viewport || !area || !viewport.scrollWidth) return
     const scale = viewport.scrollWidth / MAP_VIEW_BOX.width
     viewport.scrollLeft = (area.mapPosition.x - MAP_VIEW_BOX.x) * scale - viewport.clientWidth / 2
     viewport.scrollTop = (area.mapPosition.y - MAP_VIEW_BOX.y) * scale - viewport.clientHeight / 2
-  }, [])
+  }, [game?.currentAreaId, hintArea])
 
   if (!game) return null
 
@@ -57,7 +62,8 @@ export function MapScreen() {
         <p>Besuchte Orte sind kräftig markiert. Helle Orte kennst du bereits von einem angrenzenden Weg.</p>
       </header>
 
-      <p>Die Karte startet nah bei deinem aktuellen Ort. Mit «Ganze Karte» siehst du ganz Talora; die Schrift bleibt beim Zoomen gleich gross. Die Karte lässt sich in alle Richtungen verschieben. Alle Wege und Sperren stehen auch in der Textliste darunter.</p>
+      <p>{hintArea ? 'Die Karte startet bei Kunos Hinweis.' : 'Die Karte startet nah bei deinem aktuellen Ort.'} Mit «Ganze Karte» siehst du ganz Talora; die Schrift bleibt beim Zoomen gleich gross. Die Karte lässt sich in alle Richtungen verschieben. Alle Wege und Sperren stehen auch in der Textliste darunter.</p>
+      {hintArea && <p className="map-hint" role="status">Kunos Hinweis: Die Karte zeigt dir {hintArea.name}. Dieser Ort gilt erst als besucht, wenn du selbst dorthin reist.</p>}
       {game.flags.includes('kartennotiz_sichtbar') && <p>Alvas Notiz: «Eine gute Karte zeigt nicht nur, wohin du gehst. Sie zeigt auch, wer auf deine Rückkehr wartet.»</p>}
       <section className="world-map" aria-labelledby="visual-map-title">
         <h2 id="visual-map-title" className="visually-hidden">Grafische Karte</h2>
@@ -111,7 +117,7 @@ export function MapScreen() {
             return (
               <li key={area.id}>
                 <div><strong>{area.name}</strong>{game.currentAreaId === area.id && <span>Aktueller Ort</span>}</div>
-                <p>{game.visitedAreaIds.includes(area.id) ? 'Besucht' : 'Bekannt'} · Wege nach {connections.map((entry) => entry.name).join(', ') || 'noch unbekannt'}</p>
+                <p>{game.visitedAreaIds.includes(area.id) ? 'Besucht' : game.discoveredClueIds.includes(`hinweis_ort:${area.id}`) ? 'Bekannt durch Kunos Hinweis' : 'Bekannt'} · Wege nach {connections.map((entry) => entry.name).join(', ') || 'noch unbekannt'}</p>
                 {knownPassages.filter((passage) => (passage.fromAreaId === area.id || passage.toAreaId === area.id) && !evaluateRequirement(passage.requirement, game).met && !game.unlockedPassageIds.includes(passage.id)).map((passage) => <p className="blocked-reason" key={passage.id}>Gesperrt: {passage.fromAreaId === area.id ? passage.labelFrom : passage.labelTo}. {passage.blockedText}</p>)}
               </li>
             )
