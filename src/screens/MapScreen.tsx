@@ -1,10 +1,36 @@
+import { useRef, useState } from 'react'
 import { useAppState } from '../app/AppState'
 import { phase2World } from '../content/world'
 import { evaluateRequirement } from '../engine/requirements'
 import { getConnectedKnownAreas, getKnownAreaIds } from '../engine/selectors'
 
+const MIN_ZOOM = 1
+const MAX_ZOOM = 4
+const ZOOM_STEP = 0.5
+
 export function MapScreen() {
   const { game } = useAppState()
+  const [zoom, setZoom] = useState(MIN_ZOOM)
+  const viewportRef = useRef<HTMLDivElement>(null)
+
+  // Zoom around the middle of what is on screen, so the view does not jump.
+  const changeZoom = (next: number) => {
+    const target = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(next * 100) / 100))
+    const viewport = viewportRef.current
+    if (!viewport || target === zoom) {
+      setZoom(target)
+      return
+    }
+    const ratio = target / zoom
+    const centerX = viewport.scrollLeft + viewport.clientWidth / 2
+    const centerY = viewport.scrollTop + viewport.clientHeight / 2
+    setZoom(target)
+    requestAnimationFrame(() => {
+      viewport.scrollLeft = centerX * ratio - viewport.clientWidth / 2
+      viewport.scrollTop = centerY * ratio - viewport.clientHeight / 2
+    })
+  }
+
   if (!game) return null
 
   const knownIds = new Set(getKnownAreaIds(game, phase2World))
@@ -19,10 +45,17 @@ export function MapScreen() {
         <p>Besuchte Orte sind kräftig markiert. Helle Orte kennst du bereits von einem angrenzenden Weg.</p>
       </header>
 
-      <p>Die Karte lässt sich seitlich verschieben. Alle Wege und Sperren stehen auch in der Textliste darunter.</p>
+      <p>Zoome hinein, wenn Namen zu nah beieinander stehen; die Schrift bleibt dabei gleich gross. Die Karte lässt sich in alle Richtungen verschieben. Alle Wege und Sperren stehen auch in der Textliste darunter.</p>
       {game.flags.includes('kartennotiz_sichtbar') && <p>Alvas Notiz: «Eine gute Karte zeigt nicht nur, wohin du gehst. Sie zeigt auch, wer auf deine Rückkehr wartet.»</p>}
-      <section className="world-map" tabIndex={0} aria-labelledby="visual-map-title">
+      <section className="world-map" aria-labelledby="visual-map-title">
         <h2 id="visual-map-title" className="visually-hidden">Grafische Karte</h2>
+        <div className="map-zoom" role="group" aria-label="Kartenzoom">
+          <button type="button" onClick={() => changeZoom(zoom - ZOOM_STEP)} disabled={zoom <= MIN_ZOOM} aria-label="Karte verkleinern">−</button>
+          <span aria-live="polite">{zoom.toLocaleString('de-CH', { minimumFractionDigits: 1 })}×</span>
+          <button type="button" onClick={() => changeZoom(zoom + ZOOM_STEP)} disabled={zoom >= MAX_ZOOM} aria-label="Karte vergrössern">+</button>
+          <button type="button" className="map-zoom-reset" onClick={() => changeZoom(MIN_ZOOM)} disabled={zoom === MIN_ZOOM}>Ganze Karte</button>
+        </div>
+        <div className="map-viewport" ref={viewportRef} tabIndex={0} style={{ ['--map-zoom' as string]: zoom }}>
         <svg viewBox="20 45 960 730" role="img" aria-labelledby="map-title map-description">
           <title id="map-title">Entdeckte Orte in ganz Talora</title>
           <desc id="map-description">Die gleiche Verbindungsliste wie in der Reiseansicht, grafisch dargestellt.</desc>
@@ -41,7 +74,7 @@ export function MapScreen() {
             const visited = game.visitedAreaIds.includes(area.id)
             const current = game.currentAreaId === area.id
             return (
-              <g key={area.id} className={`map-node${visited ? ' map-node--visited' : ' map-node--known'}${current ? ' map-node--current' : ''}`} transform={`translate(${area.mapPosition.x} ${area.mapPosition.y})`}>
+              <g key={area.id} className={`map-node${visited ? ' map-node--visited' : ' map-node--known'}${current ? ' map-node--current' : ''}`} transform={`translate(${area.mapPosition.x} ${area.mapPosition.y}) scale(${1 / zoom})`}>
                 {area.safe && evaluateRequirement(area.sanctuaryRequirement, game).met ? <rect x="-11" y="-11" width="22" height="22" rx="4" /> : <circle r="11" />}
                 {current && <circle className="current-ring" r="18" />}
                 <text y="-19" textAnchor="middle">{area.name}</text>
@@ -49,6 +82,7 @@ export function MapScreen() {
             )
           })}
         </svg>
+        </div>
         <div className="map-legend" aria-hidden="true">
           <span><i className="legend-current" /> Aktuell</span>
           <span><i className="legend-visited" /> Besucht</span>

@@ -307,15 +307,22 @@ blockquote { position: relative; margin: 1.2rem 0; padding: .9rem 1.1rem; border
 .map-ring i:nth-child(4) { top: 66%; right: 10%; }
 .visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; overflow: hidden !important; clip: rect(0 0 0 0) !important; clip-path: inset(50%) !important; white-space: nowrap !important; }
 .map-screen { width: min(100% - 2rem, 1040px); }
-.world-map { overflow-x: auto; border: 1px solid #d4c7a9; border-radius: var(--radius); background: linear-gradient(145deg, #edf2df, #d8e7d8); box-shadow: var(--shadow); }
-.world-map svg { display: block; width: 100%; min-width: 850px; min-height: 360px; }
+.world-map { border: 1px solid #d4c7a9; border-radius: var(--radius); background: linear-gradient(145deg, #edf2df, #d8e7d8); box-shadow: var(--shadow); }
+.map-zoom { display: flex; align-items: center; gap: .5rem; padding: .6rem .8rem; border-bottom: 1px solid var(--line); }
+.map-zoom button { display: grid; min-width: 48px; min-height: 48px; place-items: center; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--forest); cursor: pointer; font-weight: 700; font-size: 1.2rem; }
+.map-zoom button:disabled { opacity: .4; cursor: default; }
+.map-zoom-reset { min-width: auto !important; padding: 0 .9rem; font-size: .88rem !important; }
+.map-zoom > span { min-width: 3.2rem; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* Scrolls in both directions once zoomed in. */
+.map-viewport { overflow: auto; max-height: min(70vh, 640px); overscroll-behavior: contain; }
+.world-map svg { display: block; width: calc(max(100%, 850px) * var(--map-zoom, 1)); height: auto; }
 .region-shape { fill: rgba(255,255,255,.3); stroke: rgba(57,109,98,.16); stroke-width: 2; }
 .region-shape--coast { fill: rgba(86,168,169,.16); }
 .region-shape--forest { fill: rgba(73,130,75,.18); }
 .region-shape--mark { fill: rgba(231,187,74,.13); }
 .region-shape--mountain { fill: rgba(99,112,137,.16); }
 .region-shape--final { fill: rgba(58,42,82,.15); }
-.map-edge { stroke: #6e8177; stroke-width: 5; stroke-linecap: round; }
+.map-edge { stroke: #6e8177; stroke-width: 5; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .map-edge--shortcut { stroke: var(--gold); stroke-dasharray: 10 8; }
 .map-edge--blocked { stroke: var(--danger); stroke-dasharray: 4 9; }
 .map-node circle, .map-node rect { vector-effect: non-scaling-stroke; }
